@@ -7,7 +7,15 @@ T_SEA = 69
 T_COAST = 65 
 T_MOUNTAIN = 12 
 T_HIGH_MOUNTAIN = 71
+T_HILL1 = 73
+T_HILL2 = 74
+T_FOREST = 2
+T_ANCIENT_FOREST = 4
+T_SWAMP = 107
 
+TA_FORESTS = [2,4]
+TA_MOUNTAINS = [12,71]
+TA_HILLS = [73,74]
 COASTS = [
  (56, ['c.', 'c', '#c', '.', 'c', '#c', 'c.', 'c', 'c#']),
  (57, ['c#', 'c', 'c.', '#c', 'c', '.', 'c#', 'c', 'c.']),
@@ -57,11 +65,13 @@ def is_land(t):
    return not (t==T_SEA or is_coastal(t))
 
 def is_hill(t):
-   return t in [73,74]
+   return t in TA_HILLS
 
 def terrain_to_str(t):
    if t == T_SEA:
       return '#'
+   elif 75<=t<=82: #show coastal villages and ports as '+'
+      return '+'
    elif is_coastal(t):
       return 'c'
    elif is_hill(t):
@@ -72,8 +82,24 @@ def terrain_to_str(t):
       return 'M'
    elif t == T_PLAIN:
       return '.'
+   elif t == T_FOREST:
+      return 'f'
+   elif t == T_ANCIENT_FOREST:
+      return 'F'
    else:
       return '+'
+
+def choose(arg):
+   if isinstance(arg,list):
+      return random.choice(arg)
+   elif isinstance(arg,dict):
+      r = random.randrange(sum(arg.values()))
+      for k,v in arg.iteritems():
+         if r < v:
+            return k
+         r -= v
+   else:
+      raise ValueError("only list and dict are supported.")
 
 class MapGen(object):
    def __init__(self,width,height):
@@ -129,43 +155,64 @@ class MapGen(object):
                self.map[x][y] = terr
     
    def raise_mountains(self,repeat=3,prob=40):
-      self.clear_land()
-      self.seed_land(prob,lambda: random.choice([73,74,12]))
+      self.seed_land(prob,lambda: choose(TA_HILLS + [T_MOUNTAIN]))
       for r in range(repeat):
          nmap = eval(repr(self.map))
          for x,y,t in self.itermap():
             if not is_land(t):
                continue
-            val = self.R(x,y,[73,74]) + self.R(x,y,12) + 2*self.R(x,y,71)
+            val = (self.R(x,y,TA_HILLS) + self.R(x,y,T_MOUNTAIN) + 
+                  2*self.R(x,y,T_HIGH_MOUNTAIN))
             if val >= 7:
-               nmap[x][y] = random.choice([12,12,12,71])
+               nmap[x][y] = choose({T_MOUNTAIN:3,T_HIGH_MOUNTAIN:1})
             elif val >= 4:
-               nmap[x][y] = random.choice([73,74])
+               nmap[x][y] = choose(TA_HILLS)
             else:
                nmap[x][y] = T_PLAIN
          self.map = nmap
       for x,y,t in self.itermap():
          if t == T_PLAIN and random.randrange(100) < 5:
-            self.map[x][y] = random.choice([73,74])
-         
+            self.map[x][y] = choose(TA_HILLS)
+
+   def plant_forests(self,repeat=2,prob=43):
+      self.seed_land(prob, T_FOREST)
+      for r in range(repeat):
+         nmap = eval(repr(self.map))
+         for x,y,t in self.itermap():
+            if not is_land(t):
+               continue
+            val = self.R(x,y,TA_FORESTS)
+            if val == 9:
+               nmap[x][y] = choose(TA_FORESTS)
+            elif val >= 7:
+               nmap[x][y] = choose({T_FOREST:4,T_ANCIENT_FOREST:1})
+            elif val >= 5:
+               nmap[x][y] = T_FOREST
+            elif t == T_FOREST:
+               nmap[x][y] = T_PLAIN
+         self.map = nmap
+      for x,y,t in self.itermap():
+         if t == T_PLAIN and random.randrange(100) < 5:
+            self.map[x][y] = T_FOREST
+
    def place_resources(self,prob=10):
       for x,y,t in self.itermap():
          if random.randrange(100) >= prob:
             continue
          if t == T_PLAIN:
-            nt = random.choice([5,5,6,6,7,7,8,9,17,18])
-         elif t in [73,74]:
-            nt = random.choice([14,105])
-         elif t in [12,71]:
-            nt = random.choice([14,14,15,33,34,101,102])
+            nt = choose({5:2,6:2,7:2,8:1,9:1,17:1,18:1})
+         elif t in TA_HILLS:
+            nt = choose([14,105])
+         elif t in TA_MOUNTAINS:
+            nt = choose({14:2,15:2,33:1,34:1,101:1,102:1})
          elif t == 56:
-            nt = random.choice([75,75,79])
+            nt = choose({75:2,79:1})
          elif t == 57:
-            nt = random.choice([76,76,80])
+            nt = choose({76:2,80:1})
          elif t == 58:
-            nt = random.choice([77,77,81])
+            nt = choose({77:2,81:1})
          elif t == 59:
-            nt = random.choice([78,78,82])
+            nt = choose({78:2,82:1})
          else:
             nt = t
          self.map[x][y] = nt
@@ -227,15 +274,6 @@ class MapGen(object):
                      for y in range(self.height)]
       return '\n'.join(map(lambda n: ''.join(map(terrain_to_str,n)),transposed))
 
-   def generate(self, filename ):
-      self.seed(prob=kwargs["seedprob"],sea=kwargs["border"])
-      self.carve(repeat=5)
-      self.mark_coast()
-      self.create_coastline()
-      self.raise_mountains()
-      self.place_resources()
-      self.to_coem(kwargs["filename"])
-
 def scan_coast_frequencies(files):
    hist = {}
    for f in files: 
@@ -276,10 +314,11 @@ Default values for options given in parentheses.'''
    parser.add_option("--maph", type="int", dest="mapheight", default=36, 
                         metavar="HEIGHT",
                         help="Map height in squares (36)")
-   parser.add_option("--file", dest="filename", metavar="FILE", 
+   parser.add_option("-f","--file", dest="filename", metavar="FILE", 
                         default="map.coem", 
                         help="Filename of map (map.coem)")
-   parser.add_option("-m","--mode",dest="mode",help="SHOW,GEN (GEN)")
+   parser.add_option("-m","--mode",dest="mode",help="SHOW,GEN (GEN)",
+                     default="GEN")
 
    group = OptionGroup(parser, "Generation (GEN) mode parameters")
    group.add_option("--border", type="int", dest="border", default=2, 
@@ -304,6 +343,12 @@ Default values for options given in parentheses.'''
    group.add_option("--hill-prob", type="int",dest="hillprob",default=40,
                         metavar="PROB",
                         help="Probability for seeding hills/mtn on land (40)")
+   group.add_option("--tree-steps", type="int", dest="treesteps", default=2,
+                        metavar="STEPS",
+                        help="Number of generations to shape forests (2)")
+   group.add_option("--tree-prob", type="int",dest="treeprob",default=43,
+                        metavar="PROB",
+                        help="Probability for seeding forests on land (43)")
    group.add_option("--resource-prob", type="int", dest="resprob", default=10,
                         metavar="PROB",
                         help="Probability for creating cities/mines/etc. (10)")
@@ -320,7 +365,9 @@ Default values for options given in parentheses.'''
          m.create_coastline()
       else:
          m.clear_coast()
+      m.clear_land()
       m.raise_mountains(repeat=options.hillsteps,prob=options.hillprob)
+      m.plant_forests(repeat=options.treesteps,prob=options.treeprob)
       m.place_resources(prob=options.resprob)
       m.to_coem(options.filename)
    if options.verbose:
