@@ -1,0 +1,28 @@
+Usage: mapgen.py [options]
+
+Conquest of Elysium 3 random map generator. Default values for options given
+in parentheses.
+
+Options:
+  --version             show program's version number and exit
+  -h, --help            show this help message and exit
+  -q, --quiet           
+  --mapw=WIDTH          Map width in squares (50)
+  --maph=HEIGHT         Map height in squares (36)
+  -f FILE, --file=FILE  Filename of map (map.coem)
+  -m MODE, --mode=MODE  SHOW,GEN (GEN)
+
+  Generation (GEN) mode parameters:
+    --border=INT        Sea border width (2).  Set to 0 for all land map
+    --sea-prob=PROB     Probability for seeding land vs sea. (45)
+    --carve-steps=STEPS
+                        Number of generations to shape land (5)
+    --carve-r=INT       R value for carve (5)
+    --coast             
+    --no-coast          
+    --hill-steps=STEPS  Number of generations to shape hills (3)
+    --hill-prob=PROB    Probability for seeding hills/mtn on land (40)
+    --tree-steps=STEPS  Number of generations to shape forests (2)
+    --tree-prob=PROB    Probability for seeding forests on land (43)
+    --resource-prob=PROB
+                        Probability for creating cities/mines/etc. (10)
