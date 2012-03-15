@@ -21,14 +21,14 @@ Options:
     --coast             
     --no-coast          
     --hill-steps=STEPS  Number of generations to shape hills (3)
-    --hill-prob=PROB    Probability for seeding hills/mtn on land (40)
+    --hill-prob=PROB    Probability for seeding hills/mtn on land (38)
     --tree-steps=STEPS  Number of generations to shape forests (2)
-    --tree-prob=PROB    Probability for seeding forests on land (43)
+    --tree-prob=PROB    Probability for seeding forests on land (50)
     --resource-prob=PROB
-                        Probability for creating cities/mines/etc. (10)
+                        Probability for creating cities/mines/etc. (8)
     --random-prob=PROB  Probability of placing random tile on land. (5)
     --random-radius=INT
-                        Radius from center of map to seed random tiles. (20)
-    --rare-prob=PROB    Probability of placing random rare tile on land. (5)
+                        Radius from center of map to seed random tiles. (50)
+    --rare-prob=PROB    Probability of placing random rare tile on land. (1)
     --rare-radius=INT   Radius from center of map to seed random rare tiles.
                         (20)

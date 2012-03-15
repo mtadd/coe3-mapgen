@@ -14,11 +14,16 @@ T_ANCIENT_FOREST = 4
 T_SWAMP = 107
 T_RANDOM = 35
 T_RANDOM_RARE = 99
+T_LAKE1 = 10
+T_LAKE2 = 11
 
-TA_FORESTS = [2,4]
-TA_MOUNTAINS = [12,71]
-TA_HILLS = [73,74]
+TA_FORESTS = (2,4)
+TA_MOUNTAINS = (12,71)
+TA_HILLS = (73,74)
+TA_LAKES = (10,11)
+
 COASTS = [
+ (10, ['.','.','.', '.','c','.', '.','.','.']),
  (56, ['c.', 'c', '#c', '.', 'c', '#c', 'c.', 'c', 'c#']),
  (57, ['c#', 'c', 'c.', '#c', 'c', '.', 'c#', 'c', 'c.']),
  (58, ['c.', '.', 'c.', 'c', 'c', 'c', 'c#', '#c', 'c#']),
@@ -47,14 +52,14 @@ COASTS = [
  (141, ['c.', 'c', 'c.', '.', 'c', '.', 'c.', '.', 'c.']),
  (142, ['c.', '.', 'c.', '.', 'c', '.', 'c.', 'c', 'c.']),
  (143, ['.', 'c', '.', 'c', 'c', 'c', 'c#', '#c', 'c#']),
- (144, ['c#', '#', '#c', 'c', 'c', 'c', '.', 'c', '.']),
+ (144, ['c#', 'c#', '#c', 'c', 'c', 'c', '.', 'c', '.']),
  (145, ['.', 'c', 'c#', 'c', 'c', 'c#', '.', 'c', 'c#']),
  (146, ['c#', 'c', '.', 'c#', 'c', 'c', '#c', 'c', '.']),
  (147, ['.', 'c', 'c#', 'c', 'c', 'c', 'c#', 'c', '.']),
  (148, ['c#', 'c', '.', 'c', 'c', 'c', '.', 'c', 'c#']),
  (149, ['c.', 'c', '.', '.', 'c', 'c', 'c.', 'c', '#c']),
- (150, ['c.', 'c', '#c', '.', 'c', 'c', '.', 'c', '.']),
- (151, ['.', 'c', '.', 'c', 'c', '.', '#c', 'c', 'c.']),
+ (150, ['c.', 'c', '#c', '.', 'c', 'c', 'c.', 'c', '.']),
+ (151, ['.', 'c', '.c', 'c', 'c', '.', '#c', 'c', 'c.']),
  (152, ['#c', 'c', 'c.', 'c', 'c', '.', '.', 'c', 'c.'])
 ] 
 
@@ -96,29 +101,24 @@ def terrain_to_str(t):
       return '+'
 
 def choose(arg):
-   if isinstance(arg,list):
+   if isinstance(arg,tuple) or isinstance(arg,list):
       return random.choice(arg)
    elif isinstance(arg,dict):
       r = random.randrange(sum(arg.values()))
       for k,v in arg.iteritems():
-         if r < v:
-            return k
+         if r < v: 
+            return choose(k)
          r -= v
+   elif isinstance(arg,int):
+      return arg
    else:
-      raise ValueError("only list and dict are supported.")
+      raise ValueError("choose: arg invalid type")
 
 class MapGen(object):
    def __init__(self,width,height):
       self.width = width
       self.height = height
       self.map = [[T_SEA for i in range(height)] for j in range(width)]
-
-   def seed(self, prob=45, sea=2):
-      for x,y,_ in self.itermap():
-          self.map[x][y] = T_SEA if (random.randrange(100) < prob
-                or x < sea or x >= self.width-sea or y < sea or 
-                y >= self.height-sea) else T_PLAIN
-
 
    def itermap(self):
       for x in range(self.width):
@@ -136,10 +136,12 @@ class MapGen(object):
                if not bounded:
                   cnt += 1
             else:
-               if isinstance(terrain,list) and self.map[i][j] in terrain:
-                  cnt += 1
-               if isinstance(terrain,int) and self.map[i][j] == terrain:
-                  cnt += 1
+               if isinstance(terrain,tuple) or isinstance(terrain,list):
+                  if self.map[i][j] in terrain:
+                     cnt+= 1
+               elif isinstance(terrain,int):
+                  if self.map[i][j] == terrain:
+                     cnt += 1
       return cnt
       
    def carve(self,repeat=1,r=5):
@@ -147,78 +149,67 @@ class MapGen(object):
          self.map = [[ T_SEA if self.R(x,y,T_SEA) >= r else T_PLAIN
                     for y in range(self.height)] for x in range(self.width)]
 
+        
    def clear_land(self):
-      for x,y,t in self.itermap():
-         if is_land(t):
-            self.map[x][y] = T_PLAIN
+      self.seed(100,T_PLAIN)
 
-   def seed_land(self,prob,terr,radius=None):
-      if radius is None:
-         radius = max(self.width,self.height)
-      if prob < 1 or radius < 1:
-         return
-      cx = self.width/2.0
-      cy = self.height/2.0
+   def seed(self,prob,terr,mask=lambda x,y,t: is_land(t)):
       for x,y,t in self.itermap():
-         if radius**2 < (x-cx)**2+(y-cy)**2:
-            continue
-         if is_land(t) and random.randrange(100) < prob:
+         if mask and not mask(x,y,t): continue
+         if random.randrange(100) < prob:
             if isinstance(terr,types.FunctionType):
                self.map[x][y] = terr()
-            elif isinstance(terr,int):
-               self.map[x][y] = terr
             else:
-               raise ValueError("")
+               self.map[x][y] = choose(terr)
+   
+   def mask_radius(self,radius):
+       cx, cy = self.width/2.0, self.height/2.0
+       return lambda x,y,t: is_land(t) and (x-cx)**2+(y-cy)**2 <= radius**2
     
-   def raise_mountains(self,repeat=3,prob=40):
-      if repeat == 0:
-         return
-      self.seed_land(prob,lambda: choose(TA_HILLS + [T_MOUNTAIN]))
-      for r in range(repeat):
+   def mask_border(self,b):
+      return lambda x,y,t: b<=x< self.width-b and b<=y<=self.height-b
+
+   def cellular_automata(self,steps,seed,mask,kernel,actions):
+      if steps == 0: return
+      self.seed(seed[0],seed[1],mask)
+      for step in range(steps):
          nmap = eval(repr(self.map))
          for x,y,t in self.itermap():
-            if not is_land(t):
-               continue
-            val = (self.R(x,y,TA_HILLS) + self.R(x,y,T_MOUNTAIN) + 
-                  2*self.R(x,y,T_HIGH_MOUNTAIN))
-            if val >= 7:
-               nmap[x][y] = choose({T_MOUNTAIN:3,T_HIGH_MOUNTAIN:1})
-            elif val >= 4:
-               nmap[x][y] = choose(TA_HILLS)
-            else:
-               nmap[x][y] = T_PLAIN
+            if not mask(x,y,t): continue
+            val = sum(map(lambda a: a[2]*self.R(x,y,a[0],a[1]),kernel))
+            for action in actions:
+               if val >= action[0]:
+                  nmap[x][y] = choose(action[1])
+                  break
          self.map = nmap
-      for x,y,t in self.itermap():
-         if t == T_PLAIN and random.randrange(100) < 5:
-            self.map[x][y] = choose(TA_HILLS)
+         
+   def raise_mountains(self,repeat=3,prob=40):
+      if repeat == 0: return
+      self.cellular_automata( **{
+         'steps': repeat,
+         'mask': lambda x,y,t: is_land(t),
+         'seed': (prob,{TA_HILLS:3,T_MOUNTAIN:1}),
+         'kernel': [(TA_HILLS,1,1),(T_MOUNTAIN,1,1),(T_HIGH_MOUNTAIN,1,2)],
+         'actions': [(7,{T_MOUNTAIN:3,T_HIGH_MOUNTAIN:1}),
+            (4,TA_HILLS),(0,T_PLAIN)]
+         })
+      self.seed(5,TA_HILLS,lambda x,y,t: t == T_PLAIN)
 
    def plant_forests(self,repeat=2,prob=43):
-      if repeat == 0:
-         return
-      self.seed_land(prob, T_FOREST)
-      for r in range(repeat):
-         nmap = eval(repr(self.map))
-         for x,y,t in self.itermap():
-            if not is_land(t):
-               continue
-            val = self.R(x,y,TA_FORESTS)
-            if val == 9:
-               nmap[x][y] = choose(TA_FORESTS)
-            elif val >= 7:
-               nmap[x][y] = choose({T_FOREST:4,T_ANCIENT_FOREST:1})
-            elif val >= 5:
-               nmap[x][y] = T_FOREST
-            elif t == T_FOREST:
-               nmap[x][y] = T_PLAIN
-         self.map = nmap
-      for x,y,t in self.itermap():
-         if t == T_PLAIN and random.randrange(100) < 5:
-            self.map[x][y] = T_FOREST
+      if repeat == 0: return
+      self.cellular_automata( **{
+         'steps': repeat,
+         'mask': lambda x,y,t: t in [T_PLAIN,T_FOREST,T_ANCIENT_FOREST],
+         'seed': (prob,T_FOREST),
+         'kernel': [(TA_FORESTS,1,1)],
+         'actions': [(9,TA_FORESTS),(7,{T_FOREST:4,T_ANCIENT_FOREST:1}),
+            (5,T_FOREST),(0,T_PLAIN)]
+         })
+      self.seed(5,T_FOREST,lambda x,y,t: t == T_PLAIN)
 
    def place_resources(self,prob=10):
       for x,y,t in self.itermap():
-         if random.randrange(100) >= prob:
-            continue
+         if random.randrange(100) >= prob: continue
          if t == T_PLAIN:
             nt = choose({5:2,6:2,7:2,8:1,9:1,17:1,18:1})
          elif t in TA_HILLS:
@@ -237,22 +228,51 @@ class MapGen(object):
             nt = t
          self.map[x][y] = nt
 
-   def create_coastline(self):
+   def mark_coastline(self):
       #Ensure every sea terrain bordering land is converted to coastline
       for x,y,t in self.itermap():
          if t == T_SEA and self.R(x,y,T_PLAIN,bounded=True) >= 1:
             self.map[x][y] = T_COAST
 
-      for map_x,map_y,map_t in self.itermap():
-         if not is_coastal(map_t):
-            continue
-         rng = [(map_x+j,map_y+i) for i in range(-1,2) for j in range(-1,2)]
-         for t, neighbors in COASTS:
-            if all(map( lambda x,y,n: not self.in_range(x,y) or
-                           terrain_to_str(self.map[x][y]) in n, 
-               [i[0] for i in rng], [i[1] for i in rng], neighbors)):
-               self.map[map_x][map_y] = t
-               break
+   def sanitize_coastline(self,max_iterations=10):
+      """
+      Ensure we have selects for all coastlines marked on this map.
+      If not, replace bad squares with appropriate land terrain.
+      """
+      iteration = 1
+      bad_coasts = 1 
+      while bad_coasts > 0 and iteration < max_iterations:
+         self.mark_coastline()
+         bad_coasts = 0
+         for x,y,t in self.itermap():
+            if not is_coastal(t): continue
+            c = self._select_coast(x,y)
+            if c is None:
+               self.map[x][y] = T_PLAIN
+               bad_coasts += 1
+      
+   def create_coastline(self):
+      self.sanitize_coastline()
+      for x,y,t in self.itermap():
+         if not is_coastal(t): continue
+         t = self._select_coast(x,y)
+         if t is not None:
+            self.map[x][y] = t
+         else:
+            rng = [(x+i,y+j) for j in range(-1,2) for i in range(-1,2)]
+            print 'Warning - missing tile for coast:', ''.join(
+               map(lambda n: terrain_to_str(self.map[n[0]][n[1]]),rng))
+            
+   def _select_coast(self,x,y):
+      rng = [(x+i,y+j) for j in range(-1,2) for i in range(-1,2)]
+      for t, neighbors in COASTS:
+         if all(map( lambda x,y,n: not self.in_range(x,y) or
+                        terrain_to_str(self.map[x][y]) in n, 
+            [i[0] for i in rng], [i[1] for i in rng], neighbors)):
+            return t
+      return None 
+
+
 
    def clear_coast(self):
       #Convert all coastline to sea
@@ -360,27 +380,27 @@ Default values for options given in parentheses.'''
    group.add_option("--hill-steps", type="int", dest="hillsteps", default=3,
                         metavar="STEPS",
                         help="Number of generations to shape hills (3)")
-   group.add_option("--hill-prob", type="int",dest="hillprob",default=40,
+   group.add_option("--hill-prob", type="int",dest="hillprob",default=38,
                         metavar="PROB",
-                        help="Probability for seeding hills/mtn on land (40)")
+                        help="Probability for seeding hills/mtn on land (38)")
    group.add_option("--tree-steps", type="int", dest="treesteps", default=2,
                         metavar="STEPS",
                         help="Number of generations to shape forests (2)")
-   group.add_option("--tree-prob", type="int",dest="treeprob",default=43,
+   group.add_option("--tree-prob", type="int",dest="treeprob",default=50,
                         metavar="PROB",
-                        help="Probability for seeding forests on land (43)")
-   group.add_option("--resource-prob", type="int", dest="resprob", default=10,
+                        help="Probability for seeding forests on land (50)")
+   group.add_option("--resource-prob", type="int", dest="resprob", default=8,
                         metavar="PROB",
-                        help="Probability for creating cities/mines/etc. (10)")
+                        help="Probability for creating cities/mines/etc. (8)")
    group.add_option("--random-prob", type="int", dest="randomprob", default=5,
                         metavar="PROB",
                         help="Probability of placing random tile on land. (5)")
    group.add_option("--random-radius", type="int", dest="randomradius", 
-                  default=20, metavar="INT",
-                  help="Radius from center of map to seed random tiles. (20)")
-   group.add_option("--rare-prob", type="int", dest="rareprob", default=5,
+                  default=50, metavar="INT",
+                  help="Radius from center of map to seed random tiles. (50)")
+   group.add_option("--rare-prob", type="int", dest="rareprob", default=1,
                   metavar="PROB",
-                  help="Probability of placing random rare tile on land. (5)")
+                  help="Probability of placing random rare tile on land. (1)")
    group.add_option("--rare-radius", type="int" ,dest="rareradius", 
                default=20, metavar="INT",
                help="Radius from center of map to seed random rare tiles. (20)")
@@ -391,7 +411,7 @@ Default values for options given in parentheses.'''
       m = MapGen.from_coem(options.filename)
    elif options.mode == "GEN":
       m = MapGen(options.mapwidth,options.mapheight)
-      m.seed(prob=options.seaprob,sea=options.border)
+      m.seed(100-options.seaprob,T_PLAIN,mask=m.mask_border(options.border))
       m.carve(repeat=options.carvesteps,r=options.carver)
       if options.coast:
          m.create_coastline()
@@ -401,8 +421,10 @@ Default values for options given in parentheses.'''
       m.raise_mountains(repeat=options.hillsteps,prob=options.hillprob)
       m.plant_forests(repeat=options.treesteps,prob=options.treeprob)
       m.place_resources(prob=options.resprob)
-      m.seed_land(options.randomprob,T_RANDOM,options.randomradius)
-      m.seed_land(options.rareprob,T_RANDOM_RARE,options.rareradius)
+      m.seed(options.randomprob,T_RANDOM,
+            mask=m.mask_radius(options.randomradius))
+      m.seed(options.rareprob,T_RANDOM_RARE,
+            mask=m.mask_radius(options.rareradius))
       m.to_coem(options.filename)
    if options.verbose:
       print 'Map:', options.filename
