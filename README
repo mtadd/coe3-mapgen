@@ -14,10 +14,9 @@ Options:
 
   Generation (GEN) mode parameters:
     --border=INT        Sea border width (2).  Set to 0 for all land map
-    --sea-prob=PROB     Probability for seeding land vs sea. (45)
-    --carve-steps=STEPS
-                        Number of generations to shape land (5)
-    --carve-r=INT       R value for carve (5)
+    --land-prob=PROB    Probability for seeding land vs sea. (55)
+    --land-steps=STEPS  Number of generations to shape land (5)
+    --land-r=INT        R value for shaping land (5)
     --coast             
     --no-coast          
     --hill-steps=STEPS  Number of generations to shape hills (3)

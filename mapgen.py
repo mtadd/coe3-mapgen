@@ -118,7 +118,11 @@ class MapGen(object):
    def __init__(self,width,height):
       self.width = width
       self.height = height
-      self.map = [[T_SEA for i in range(height)] for j in range(width)]
+      self.initmap()
+
+   def initmap(self):
+      self.map = [[T_SEA for i in range(self.height)] 
+                         for j in range(self.width)]
 
    def itermap(self):
       for x in range(self.width):
@@ -144,15 +148,6 @@ class MapGen(object):
                      cnt += 1
       return cnt
       
-   def carve(self,repeat=1,r=5):
-      for i in range(repeat):
-         self.map = [[ T_SEA if self.R(x,y,T_SEA) >= r else T_PLAIN
-                    for y in range(self.height)] for x in range(self.width)]
-
-        
-   def clear_land(self):
-      self.seed(100,T_PLAIN)
-
    def seed(self,prob,terr,mask=lambda x,y,t: is_land(t)):
       for x,y,t in self.itermap():
          if mask and not mask(x,y,t): continue
@@ -169,20 +164,57 @@ class MapGen(object):
    def mask_border(self,b):
       return lambda x,y,t: b<=x< self.width-b and b<=y<=self.height-b
 
-   def cellular_automata(self,steps,seed,mask,kernel,actions):
+   def cellular_automata(self,steps,kernel,actions,seed=None,mask=None):
       if steps == 0: return
-      self.seed(seed[0],seed[1],mask)
+      if seed: self.seed(seed[0],seed[1],mask)
       for step in range(steps):
          nmap = eval(repr(self.map))
          for x,y,t in self.itermap():
-            if not mask(x,y,t): continue
+            if mask and not mask(x,y,t): continue
             val = sum(map(lambda a: a[2]*self.R(x,y,a[0],a[1]),kernel))
             for action in actions:
                if val >= action[0]:
                   nmap[x][y] = choose(action[1])
                   break
          self.map = nmap
+
+   def flood_fill(self,x,y,target,replace):
+      queue = [(x,y)]
+      while len(queue):
+         x,y = queue.pop()
+         if self.map[x][y] == target:
+            self.map[x][y] = replace
+            queue.extend([(x+i,y+j) for i,j in [(-1,0),(0,1),(1,0),(0,-1)]
+                          if self.in_range(x+i,y+j)])
          
+         
+   def shape_land(self,prob,border,repeat=1,r=5):
+      it = 0
+      while it < 20:
+         it += 1
+         print "Shaping land iteration", it
+         self.initmap()
+         self.cellular_automata( **{
+            'seed': (prob,T_PLAIN),
+            'mask': self.mask_border(border),
+            'steps': repeat,
+            'kernel': [(T_SEA,1,1)],
+            'actions': [(r,T_SEA),(0,T_PLAIN)]
+            })
+
+         # ensure all land contiguous
+         for x,y,t in self.itermap():
+            if t == T_PLAIN:
+               self.flood_fill(x,y,T_PLAIN,T_MOUNTAIN)
+               break
+         if [t for _,_,t in self.itermap()].count(T_PLAIN) == 0:
+            self.clear_land()
+            break
+
+
+   def clear_land(self):
+      self.seed(100,T_PLAIN)
+        
    def raise_mountains(self,repeat=3,prob=40):
       if repeat == 0: return
       self.cellular_automata( **{
@@ -365,15 +397,15 @@ Default values for options given in parentheses.'''
                         metavar="INT",
                         help="Sea border width (2)."
                              "  Set to 0 for all land map")
-   group.add_option("--sea-prob", type="int",dest="seaprob", default=45,
+   group.add_option("--land-prob", type="int",dest="landprob", default=55,
                         metavar="PROB",
-                        help="Probability for seeding land vs sea. (45)")
-   group.add_option("--carve-steps", type="int", dest="carvesteps", default=5,
+                        help="Probability for seeding land vs sea. (55)")
+   group.add_option("--land-steps", type="int", dest="landsteps", default=5,
                         metavar="STEPS",
                         help="Number of generations to shape land (5)")
-   group.add_option("--carve-r", type="int", dest="carver", default=5,
+   group.add_option("--land-r", type="int", dest="landr", default=5,
                         metavar="INT",
-                        help="R value for carve (5)")
+                        help="R value for shaping land (5)")
    group.add_option("--coast", action="store_true",dest="coast",
                         default=True)
    group.add_option("--no-coast", action="store_false",dest="coast")
@@ -411,8 +443,8 @@ Default values for options given in parentheses.'''
       m = MapGen.from_coem(options.filename)
    elif options.mode == "GEN":
       m = MapGen(options.mapwidth,options.mapheight)
-      m.seed(100-options.seaprob,T_PLAIN,mask=m.mask_border(options.border))
-      m.carve(repeat=options.carvesteps,r=options.carver)
+      m.shape_land(prob=options.landprob,border=options.border,
+                   repeat=options.landsteps,r=options.landr)
       if options.coast:
          m.create_coastline()
       else:
