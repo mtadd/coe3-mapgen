@@ -157,7 +157,6 @@ class MapGen(object):
          radius = max(self.width,self.height)
       if prob < 1 or radius < 1:
          return
-      print prob,terr
       cx = self.width/2.0
       cy = self.height/2.0
       for x,y,t in self.itermap():
@@ -172,9 +171,9 @@ class MapGen(object):
                raise ValueError("")
     
    def raise_mountains(self,repeat=3,prob=40):
-      if repeat > 0:
-         self.seed_land(prob,lambda: choose(TA_HILLS + [T_MOUNTAIN]))
-         print self
+      if repeat == 0:
+         return
+      self.seed_land(prob,lambda: choose(TA_HILLS + [T_MOUNTAIN]))
       for r in range(repeat):
          nmap = eval(repr(self.map))
          for x,y,t in self.itermap():
@@ -194,8 +193,9 @@ class MapGen(object):
             self.map[x][y] = choose(TA_HILLS)
 
    def plant_forests(self,repeat=2,prob=43):
-      if repeat > 0:
-         self.seed_land(prob, T_FOREST)
+      if repeat == 0:
+         return
+      self.seed_land(prob, T_FOREST)
       for r in range(repeat):
          nmap = eval(repr(self.map))
          for x,y,t in self.itermap():
