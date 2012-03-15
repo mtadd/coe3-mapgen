@@ -12,6 +12,8 @@ T_HILL2 = 74
 T_FOREST = 2
 T_ANCIENT_FOREST = 4
 T_SWAMP = 107
+T_RANDOM = 35
+T_RANDOM_RARE = 99
 
 TA_FORESTS = [2,4]
 TA_MOUNTAINS = [12,71]
@@ -86,6 +88,10 @@ def terrain_to_str(t):
       return 'f'
    elif t == T_ANCIENT_FOREST:
       return 'F'
+   elif t == T_RANDOM:
+      return '?'
+   elif t == T_RANDOM_RARE:
+      return '!'
    else:
       return '+'
 
@@ -146,16 +152,29 @@ class MapGen(object):
          if is_land(t):
             self.map[x][y] = T_PLAIN
 
-   def seed_land(self,prob,terr):
+   def seed_land(self,prob,terr,radius=None):
+      if radius is None:
+         radius = max(self.width,self.height)
+      if prob < 1 or radius < 1:
+         return
+      print prob,terr
+      cx = self.width/2.0
+      cy = self.height/2.0
       for x,y,t in self.itermap():
+         if radius**2 < (x-cx)**2+(y-cy)**2:
+            continue
          if is_land(t) and random.randrange(100) < prob:
             if isinstance(terr,types.FunctionType):
                self.map[x][y] = terr()
             elif isinstance(terr,int):
                self.map[x][y] = terr
+            else:
+               raise ValueError("")
     
    def raise_mountains(self,repeat=3,prob=40):
-      self.seed_land(prob,lambda: choose(TA_HILLS + [T_MOUNTAIN]))
+      if repeat > 0:
+         self.seed_land(prob,lambda: choose(TA_HILLS + [T_MOUNTAIN]))
+         print self
       for r in range(repeat):
          nmap = eval(repr(self.map))
          for x,y,t in self.itermap():
@@ -175,7 +194,8 @@ class MapGen(object):
             self.map[x][y] = choose(TA_HILLS)
 
    def plant_forests(self,repeat=2,prob=43):
-      self.seed_land(prob, T_FOREST)
+      if repeat > 0:
+         self.seed_land(prob, T_FOREST)
       for r in range(repeat):
          nmap = eval(repr(self.map))
          for x,y,t in self.itermap():
@@ -352,6 +372,18 @@ Default values for options given in parentheses.'''
    group.add_option("--resource-prob", type="int", dest="resprob", default=10,
                         metavar="PROB",
                         help="Probability for creating cities/mines/etc. (10)")
+   group.add_option("--random-prob", type="int", dest="randomprob", default=5,
+                        metavar="PROB",
+                        help="Probability of placing random tile on land. (5)")
+   group.add_option("--random-radius", type="int", dest="randomradius", 
+                  default=20, metavar="INT",
+                  help="Radius from center of map to seed random tiles. (20)")
+   group.add_option("--rare-prob", type="int", dest="rareprob", default=5,
+                  metavar="PROB",
+                  help="Probability of placing random rare tile on land. (5)")
+   group.add_option("--rare-radius", type="int" ,dest="rareradius", 
+               default=20, metavar="INT",
+               help="Radius from center of map to seed random rare tiles. (20)")
    parser.add_option_group(group)
    (options, args) = parser.parse_args()
 
@@ -369,6 +401,8 @@ Default values for options given in parentheses.'''
       m.raise_mountains(repeat=options.hillsteps,prob=options.hillprob)
       m.plant_forests(repeat=options.treesteps,prob=options.treeprob)
       m.place_resources(prob=options.resprob)
+      m.seed_land(options.randomprob,T_RANDOM,options.randomradius)
+      m.seed_land(options.rareprob,T_RANDOM_RARE,options.rareradius)
       m.to_coem(options.filename)
    if options.verbose:
       print 'Map:', options.filename
