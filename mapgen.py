@@ -63,10 +63,23 @@ COASTS = [
  (152, ['#c', 'c', 'c.', 'c', 'c', '.', '.', 'c', 'c.'])
 ] 
 
+RESOURCES = [
+ (T_PLAIN,     10,{5:2,6:2,7:2,8:1,9:1,17:1,18:1}),
+ (TA_HILLS,    10,[14,105]),
+ (TA_MOUNTAINS,10,{14:2,15:2,33:1,34:1,101:1,102:1}),
+ (56,          10,{75:2,79:1}),
+ (57,          10,{76:2,80:1}),
+ (58,          10,{77:2,81:1}),
+ (59,          10,{78:2,82:1})
+]
+
 
 def is_coastal(t):
    return (56<=t<=68 or 75<=t<=82 or 139<=t<=152 
           or 198<=t<=201 or t in [108, 109])
+
+def is_coastal_village(t):
+   return 75<=t<=82
 
 def is_land(t):
    return not (t==T_SEA or is_coastal(t))
@@ -74,31 +87,37 @@ def is_land(t):
 def is_hill(t):
    return t in TA_HILLS
 
+TERRAIN_STR = [
+   (T_SEA,              '#'),
+   (is_coastal_village, '+'),
+   (is_coastal,         'c'),
+   (is_hill,            'n'),
+   (T_MOUNTAIN,         '^'),
+   (T_HIGH_MOUNTAIN,    'M'),
+   (T_PLAIN,            '.'),
+   (T_FOREST,           'f'),
+   (T_ANCIENT_FOREST,   'F'),
+   (T_RANDOM,           '?'),
+   (T_RANDOM_RARE,      '!'),
+   (lambda t: True,     '+')
+   ]
+
+
 def terrain_to_str(t):
-   if t == T_SEA:
-      return '#'
-   elif 75<=t<=82: #show coastal villages and ports as '+'
-      return '+'
-   elif is_coastal(t):
-      return 'c'
-   elif is_hill(t):
-      return 'n'
-   elif t == T_MOUNTAIN:
-      return '^'
-   elif t == T_HIGH_MOUNTAIN:
-      return 'M'
-   elif t == T_PLAIN:
-      return '.'
-   elif t == T_FOREST:
-      return 'f'
-   elif t == T_ANCIENT_FOREST:
-      return 'F'
-   elif t == T_RANDOM:
-      return '?'
-   elif t == T_RANDOM_RARE:
-      return '!'
+   for test, ch in TERRAIN_STR:
+      if test_terrain(t,test): 
+         return ch
+   raise ValueError('Invalid terrain code: ' + repr(t))
+
+def test_terrain(terrain,test):
+   if isinstance(test,tuple) or isinstance(test,list):
+      return terrain in test
+   elif isinstance(test,int):
+      return terrain == test
+   elif isinstance(test,types.FunctionType):
+      return test(terrain)
    else:
-      return '+'
+      raise ValueError("test_terrain test arg invalid: " + repr(test))
 
 def choose(arg):
    if isinstance(arg,tuple) or isinstance(arg,list):
@@ -112,7 +131,7 @@ def choose(arg):
    elif isinstance(arg,int):
       return arg
    else:
-      raise ValueError("choose: arg invalid type")
+      raise ValueError("choose: arg invalid: " + repr(arg))
 
 class MapGen(object):
    def __init__(self,width,height):
@@ -140,12 +159,8 @@ class MapGen(object):
                if not bounded:
                   cnt += 1
             else:
-               if isinstance(terrain,tuple) or isinstance(terrain,list):
-                  if self.map[i][j] in terrain:
-                     cnt+= 1
-               elif isinstance(terrain,int):
-                  if self.map[i][j] == terrain:
-                     cnt += 1
+               if test_terrain(self.map[i][j],terrain):
+                  cnt += 1
       return cnt
       
    def seed(self,prob,terr,mask=lambda x,y,t: is_land(t)):
@@ -182,7 +197,7 @@ class MapGen(object):
       queue = [(x,y)]
       while len(queue):
          x,y = queue.pop()
-         if self.map[x][y] == target:
+         if test_terrain(self.map[x][y], target):
             self.map[x][y] = replace
             queue.extend([(x+i,y+j) for i,j in [(-1,0),(0,1),(1,0),(0,-1)]
                           if self.in_range(x+i,y+j)])
@@ -204,13 +219,12 @@ class MapGen(object):
 
          # ensure all land contiguous
          for x,y,t in self.itermap():
-            if t == T_PLAIN:
+            if test_terrain(t,T_PLAIN):
                self.flood_fill(x,y,T_PLAIN,T_MOUNTAIN)
                break
          if [t for _,_,t in self.itermap()].count(T_PLAIN) == 0:
             self.clear_land()
             break
-
 
    def clear_land(self):
       self.seed(100,T_PLAIN)
@@ -241,24 +255,9 @@ class MapGen(object):
 
    def place_resources(self,prob=10):
       for x,y,t in self.itermap():
-         if random.randrange(100) >= prob: continue
-         if t == T_PLAIN:
-            nt = choose({5:2,6:2,7:2,8:1,9:1,17:1,18:1})
-         elif t in TA_HILLS:
-            nt = choose([14,105])
-         elif t in TA_MOUNTAINS:
-            nt = choose({14:2,15:2,33:1,34:1,101:1,102:1})
-         elif t == 56:
-            nt = choose({75:2,79:1})
-         elif t == 57:
-            nt = choose({76:2,80:1})
-         elif t == 58:
-            nt = choose({77:2,81:1})
-         elif t == 59:
-            nt = choose({78:2,82:1})
-         else:
-            nt = t
-         self.map[x][y] = nt
+         for ttest, prob, choices in RESOURCES:
+            if test_terrain(t,ttest) and random.randrange(100) < prob:
+               self.map[x][y] = choose(choices)
 
    def mark_coastline(self):
       #Ensure every sea terrain bordering land is converted to coastline
