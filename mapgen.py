@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import types
 import random
+from optparse import Values
 
 T_PLAIN = 0
 T_SEA = 69
@@ -23,7 +24,7 @@ TA_HILLS = (73,74)
 TA_LAKES = (10,11)
 
 COASTS = [
- (10, ['.','.','.', '.','c','.', '.','.','.']),
+ (TA_LAKES, ['.','.','.', '.','c','.', '.','.','.']),
  (56, ['c.', 'c', '#c', '.', 'c', '#c', 'c.', 'c', 'c#']),
  (57, ['c#', 'c', 'c.', '#c', 'c', '.', 'c#', 'c', 'c.']),
  (58, ['c.', '.', 'c.', 'c', 'c', 'c', 'c#', '#c', 'c#']),
@@ -64,6 +65,7 @@ COASTS = [
 ] 
 
 RESOURCES = [
+# test       prob  Terrain:weight pairs
  (T_PLAIN,     10,{5:2,6:2,7:2,8:1,9:1,17:1,18:1}),
  (TA_HILLS,    10,[14,105]),
  (TA_MOUNTAINS,10,{14:2,15:2,33:1,34:1,101:1,102:1}),
@@ -207,14 +209,16 @@ class MapGen(object):
       it = 0
       while it < 20:
          it += 1
-         print "Shaping land iteration", it
+         if options.verbose:
+            print "Shaping land iteration", it
          self.initmap()
          self.cellular_automata( **{
             'seed': (prob,T_PLAIN),
             'mask': self.mask_border(border),
             'steps': repeat,
             'kernel': [(T_SEA,1,1)],
-            'actions': [(r,T_SEA),(0,T_PLAIN)]
+            'actions': [(r,T_SEA),
+                        (0,T_PLAIN)]
             })
 
          # ensure all land contiguous
@@ -235,9 +239,12 @@ class MapGen(object):
          'steps': repeat,
          'mask': lambda x,y,t: is_land(t),
          'seed': (prob,{TA_HILLS:3,T_MOUNTAIN:1}),
-         'kernel': [(TA_HILLS,1,1),(T_MOUNTAIN,1,1),(T_HIGH_MOUNTAIN,1,2)],
+         'kernel': [(TA_HILLS,1,1),
+                    (T_MOUNTAIN,1,1),
+                    (T_HIGH_MOUNTAIN,1,2)],
          'actions': [(7,{T_MOUNTAIN:3,T_HIGH_MOUNTAIN:1}),
-            (4,TA_HILLS),(0,T_PLAIN)]
+                     (4,TA_HILLS),
+                     (0,T_PLAIN)]
          })
       self.seed(5,TA_HILLS,lambda x,y,t: t == T_PLAIN)
 
@@ -248,15 +255,31 @@ class MapGen(object):
          'mask': lambda x,y,t: t in [T_PLAIN,T_FOREST,T_ANCIENT_FOREST],
          'seed': (prob,T_FOREST),
          'kernel': [(TA_FORESTS,1,1)],
-         'actions': [(9,TA_FORESTS),(7,{T_FOREST:4,T_ANCIENT_FOREST:1}),
-            (5,T_FOREST),(0,T_PLAIN)]
+         'actions': [(9,TA_FORESTS),
+                     (7,{T_FOREST:4,T_ANCIENT_FOREST:1}),
+                     (5,T_FOREST),
+                     (0,T_PLAIN)]
          })
       self.seed(5,T_FOREST,lambda x,y,t: t == T_PLAIN)
 
+   def basic_terrain(self):
+      self.cellular_automata( 
+            steps = options.hillsteps,
+            mask = lambda x,y,t: is_land(t),
+            seed = (options.hillprob,T_MOUNTAIN),
+            kernel = [(T_MOUNTAIN,1,1)],
+            actions = [(options.hillr,T_MOUNTAIN), (0,T_PLAIN)] )
+      self.cellular_automata(
+            steps = options.treesteps,
+            mask = lambda x,y,t: t in [T_PLAIN,T_FOREST],
+            seed = (options.treeprob,T_FOREST),
+            kernel = [(T_FOREST,1,1)],
+            actions = [(options.treer,T_FOREST), (0,T_PLAIN)] )
+
    def place_resources(self,prob=10):
       for x,y,t in self.itermap():
-         for ttest, prob, choices in RESOURCES:
-            if test_terrain(t,ttest) and random.randrange(100) < prob:
+         for test, prob, choices in RESOURCES:
+            if test_terrain(t,test) and random.randrange(100) < prob:
                self.map[x][y] = choose(choices)
 
    def mark_coastline(self):
@@ -271,8 +294,7 @@ class MapGen(object):
       If not, replace bad squares with appropriate land terrain.
       """
       iteration = 1
-      bad_coasts = 1 
-      while bad_coasts > 0 and iteration < max_iterations:
+      while iteration < max_iterations:
          self.mark_coastline()
          bad_coasts = 0
          for x,y,t in self.itermap():
@@ -281,6 +303,11 @@ class MapGen(object):
             if c is None:
                self.map[x][y] = T_PLAIN
                bad_coasts += 1
+         if bad_coasts > 0:
+            if options.verbose:
+               print "Reshaping {0} coast.".format(bad_coasts)
+         else:
+            break
       
    def create_coastline(self):
       self.sanitize_coastline()
@@ -288,7 +315,7 @@ class MapGen(object):
          if not is_coastal(t): continue
          t = self._select_coast(x,y)
          if t is not None:
-            self.map[x][y] = t
+            self.map[x][y] = choose(t)
          else:
             rng = [(x+i,y+j) for j in range(-1,2) for i in range(-1,2)]
             print 'Warning - missing tile for coast:', ''.join(
@@ -303,8 +330,6 @@ class MapGen(object):
             return t
       return None 
 
-
-
    def clear_coast(self):
       #Convert all coastline to sea
       for x,y,t in self.itermap():
@@ -313,12 +338,22 @@ class MapGen(object):
 
    def to_coem(self,filename="map.coem"):
       f = open(filename,'w')
-      f.write("mapsize {0} {1}\n".format(self.width,self.height))
+      f.write("# Created by MapGen.py v{0}\n".format(options.version))
+      f.write("\n#options {0}\n".format(options))
+      for y in range(self.height):
+         f.write("\n#  ")
+         for x in range(self.width):
+            f.write(terrain_to_str(self.map[x][y]))
+
+      f.write("\nmapsize {0} {1}\n".format(self.width,self.height))
       for y in range(self.height):
          f.write("terrainrow {0} ".format(y))
          for x in range(self.width):
             f.write("{0},".format(self.map[x][y]))
          f.write("\n")
+
+      if options.basic:
+         f.write("addfancyterrain\n")
       f.close()
 
    @staticmethod
@@ -370,34 +405,54 @@ def scan_coast_frequencies(files):
       res[t] = re 
    return hist, tiles, res
 
-def run_main():
+default_options = {
+   'version':'0.2',
+   'verbose':True, 
+   'basic':False,
+   'mode':'GEN',
+   'mapwidth':50,
+   'mapheight':36,
+   'filename':'map.coem',
+   'border':2,
+   'landprob':55,
+   'landsteps':5,
+   'landr':5,
+   'coast':True,
+   'hillsteps':1,
+   'hillprob':33,
+   'hillr':4,
+   'treesteps':1,
+   'treeprob':38,
+   'treer':4,
+   'resprob':8,
+   'randomprob':5,
+   'randomradius':50,
+   'rareprob':1,
+   'rareradius':20,
+   }
+options = Values(default_options)
+
+def mapgen_main():
    from optparse import OptionParser, OptionGroup
-   
    description='''Conquest of Elysium 3 random map generator.
 Default values for options given in parentheses.'''
 
-   parser = OptionParser(description=description, version="0.1")
-   parser.add_option("-q","--quiet",action="store_false",dest="verbose",
-                        default=True)
-   parser.add_option("--mapw", type="int", dest="mapwidth", default=50, 
-                        metavar="WIDTH",
-                        help="Map width in squares (50)")
-   parser.add_option("--maph", type="int", dest="mapheight", default=36, 
-                        metavar="HEIGHT",
-                        help="Map height in squares (36)")
+   parser = OptionParser(description=description, version=options.version)
+   parser.set_defaults(**default_options)
+   parser.add_option("-q","--quiet",action="store_false",dest="verbose")
+   parser.add_option("-x","--mapw", type="int", dest="mapwidth",  
+                        metavar="WIDTH", help="Map width in squares (50)")
+   parser.add_option("-y","--maph", type="int", dest="mapheight",  
+                        metavar="HEIGHT", help="Map height in squares (36)")
    parser.add_option("-f","--file", dest="filename", metavar="FILE", 
-                        default="map.coem", 
                         help="Filename of map (map.coem)")
-   parser.add_option("-m","--mode",dest="mode",help="SHOW,GEN (GEN)",
-                     default="GEN")
+   parser.add_option("-m","--mode",dest="mode",help="SHOW,GEN (GEN)")
 
    group = OptionGroup(parser, "Generation (GEN) mode parameters")
-   group.add_option("--border", type="int", dest="border", default=2, 
-                        metavar="INT",
+   group.add_option("--border", type="int", dest="border",  metavar="INT",
                         help="Sea border width (2)."
                              "  Set to 0 for all land map")
-   group.add_option("--land-prob", type="int",dest="landprob", default=55,
-                        metavar="PROB",
+   group.add_option("--land-prob", type="int",dest="landprob", metavar="PROB",
                         help="Probability for seeding land vs sea. (55)")
    group.add_option("--land-steps", type="int", dest="landsteps", default=5,
                         metavar="STEPS",
@@ -408,37 +463,39 @@ Default values for options given in parentheses.'''
    group.add_option("--coast", action="store_true",dest="coast",
                         default=True)
    group.add_option("--no-coast", action="store_false",dest="coast")
-   group.add_option("--hill-steps", type="int", dest="hillsteps", default=3,
+   group.add_option("--hill-steps", type="int", dest="hillsteps", 
                         metavar="STEPS",
                         help="Number of generations to shape hills (3)")
-   group.add_option("--hill-prob", type="int",dest="hillprob",default=38,
-                        metavar="PROB",
+   group.add_option("--hill-prob", type="int",dest="hillprob", metavar="PROB",
                         help="Probability for seeding hills/mtn on land (38)")
-   group.add_option("--tree-steps", type="int", dest="treesteps", default=2,
+   group.add_option("--tree-steps", type="int", dest="treesteps", 
                         metavar="STEPS",
                         help="Number of generations to shape forests (2)")
-   group.add_option("--tree-prob", type="int",dest="treeprob",default=50,
-                        metavar="PROB",
+   group.add_option("--tree-prob", type="int",dest="treeprob", metavar="PROB",
                         help="Probability for seeding forests on land (50)")
-   group.add_option("--resource-prob", type="int", dest="resprob", default=8,
+   group.add_option("--resource-prob", type="int", dest="resprob", 
                         metavar="PROB",
                         help="Probability for creating cities/mines/etc. (8)")
-   group.add_option("--random-prob", type="int", dest="randomprob", default=5,
+   group.add_option("--random-prob", type="int", dest="randomprob", 
                         metavar="PROB",
                         help="Probability of placing random tile on land. (5)")
    group.add_option("--random-radius", type="int", dest="randomradius", 
-                  default=50, metavar="INT",
+                  metavar="INT",
                   help="Radius from center of map to seed random tiles. (50)")
-   group.add_option("--rare-prob", type="int", dest="rareprob", default=1,
-                  metavar="PROB",
+   group.add_option("--rare-prob", type="int", dest="rareprob", metavar="PROB",
                   help="Probability of placing random rare tile on land. (1)")
    group.add_option("--rare-radius", type="int" ,dest="rareradius", 
-               default=20, metavar="INT",
+               metavar="INT",
                help="Radius from center of map to seed random rare tiles. (20)")
+   group.add_option("--basic",action="store_true",dest="basic")
    parser.add_option_group(group)
+   global options
    (options, args) = parser.parse_args()
-
-   if options.mode == "SHOW":
+   print options
+   if options.mode == "SCAN":
+      print scan_coast_frequencies(args)
+      return
+   elif options.mode == "SHOW":
       m = MapGen.from_coem(options.filename)
    elif options.mode == "GEN":
       m = MapGen(options.mapwidth,options.mapheight)
@@ -449,13 +506,16 @@ Default values for options given in parentheses.'''
       else:
          m.clear_coast()
       m.clear_land()
-      m.raise_mountains(repeat=options.hillsteps,prob=options.hillprob)
-      m.plant_forests(repeat=options.treesteps,prob=options.treeprob)
-      m.place_resources(prob=options.resprob)
-      m.seed(options.randomprob,T_RANDOM,
-            mask=m.mask_radius(options.randomradius))
-      m.seed(options.rareprob,T_RANDOM_RARE,
-            mask=m.mask_radius(options.rareradius))
+      if options.basic:
+         m.basic_terrain()
+      else:
+         m.raise_mountains(repeat=options.hillsteps,prob=options.hillprob)
+         m.plant_forests(repeat=options.treesteps,prob=options.treeprob)
+         m.place_resources(prob=options.resprob)
+         m.seed(options.randomprob,T_RANDOM,
+               mask=m.mask_radius(options.randomradius))
+         m.seed(options.rareprob,T_RANDOM_RARE,
+               mask=m.mask_radius(options.rareradius))
       m.to_coem(options.filename)
    if options.verbose:
       print 'Map:', options.filename
@@ -466,4 +526,4 @@ if __name__ == "__main__":
 
 #   import sys
 #   hist, tiles, res = scan_coasts(sys.argv[3:])
-   run_main()
+   mapgen_main()
