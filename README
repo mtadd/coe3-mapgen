@@ -7,8 +7,10 @@ Options:
   --version             show program's version number and exit
   -h, --help            show this help message and exit
   -q, --quiet           
-  --mapw=WIDTH          Map width in squares (50)
-  --maph=HEIGHT         Map height in squares (36)
+  -x WIDTH, --mapw=WIDTH
+                        Map width in squares (50)
+  -y HEIGHT, --maph=HEIGHT
+                        Map height in squares (36)
   -f FILE, --file=FILE  Filename of map (map.coem)
   -m MODE, --mode=MODE  SHOW,GEN (GEN)
 
@@ -31,3 +33,5 @@ Options:
     --rare-prob=PROB    Probability of placing random rare tile on land. (1)
     --rare-radius=INT   Radius from center of map to seed random rare tiles.
                         (20)
+    --basic             Add mountains and forests, and set addfancyterrain in
+                        map

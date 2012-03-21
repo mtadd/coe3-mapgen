@@ -437,6 +437,7 @@ def mapgen_main():
    description='''Conquest of Elysium 3 random map generator.
 Default values for options given in parentheses.'''
 
+   global options
    parser = OptionParser(description=description, version=options.version)
    parser.set_defaults(**default_options)
    parser.add_option("-q","--quiet",action="store_false",dest="verbose")
@@ -487,9 +488,11 @@ Default values for options given in parentheses.'''
    group.add_option("--rare-radius", type="int" ,dest="rareradius", 
                metavar="INT",
                help="Radius from center of map to seed random rare tiles. (20)")
-   group.add_option("--basic",action="store_true",dest="basic")
+   group.add_option("--basic",action="store_true",dest="basic",
+               help="Add mountains and forests, and set addfancyterrain in map")
+
+
    parser.add_option_group(group)
-   global options
    (options, args) = parser.parse_args()
    print options
    if options.mode == "SCAN":
