@@ -432,6 +432,36 @@ default_options = {
    }
 options = Values(default_options)
 
+def mapgen():
+   if options.mode == "SCAN":
+      print scan_coast_frequencies(args)
+      return
+   elif options.mode == "SHOW":
+      m = MapGen.from_coem(options.filename)
+   elif options.mode == "GEN":
+      m = MapGen(options.mapwidth,options.mapheight)
+      m.shape_land(prob=options.landprob,border=options.border,
+                   repeat=options.landsteps,r=options.landr)
+      if options.coast:
+         m.create_coastline()
+      else:
+         m.clear_coast()
+      m.clear_land()
+      if options.basic:
+         m.basic_terrain()
+      else:
+         m.raise_mountains(repeat=options.hillsteps,prob=options.hillprob)
+         m.plant_forests(repeat=options.treesteps,prob=options.treeprob)
+         m.place_resources(prob=options.resprob)
+         m.seed(options.randomprob,T_RANDOM,
+               mask=m.mask_radius(options.randomradius))
+         m.seed(options.rareprob,T_RANDOM_RARE,
+               mask=m.mask_radius(options.rareradius))
+      m.to_coem(options.filename)
+   if options.verbose:
+      print 'Map:', options.filename
+      print m
+
 def mapgen_main():
    from optparse import OptionParser, OptionGroup
    description='''Conquest of Elysium 3 random map generator.
@@ -494,35 +524,8 @@ Default values for options given in parentheses.'''
 
    parser.add_option_group(group)
    (options, args) = parser.parse_args()
-   print options
-   if options.mode == "SCAN":
-      print scan_coast_frequencies(args)
-      return
-   elif options.mode == "SHOW":
-      m = MapGen.from_coem(options.filename)
-   elif options.mode == "GEN":
-      m = MapGen(options.mapwidth,options.mapheight)
-      m.shape_land(prob=options.landprob,border=options.border,
-                   repeat=options.landsteps,r=options.landr)
-      if options.coast:
-         m.create_coastline()
-      else:
-         m.clear_coast()
-      m.clear_land()
-      if options.basic:
-         m.basic_terrain()
-      else:
-         m.raise_mountains(repeat=options.hillsteps,prob=options.hillprob)
-         m.plant_forests(repeat=options.treesteps,prob=options.treeprob)
-         m.place_resources(prob=options.resprob)
-         m.seed(options.randomprob,T_RANDOM,
-               mask=m.mask_radius(options.randomradius))
-         m.seed(options.rareprob,T_RANDOM_RARE,
-               mask=m.mask_radius(options.rareradius))
-      m.to_coem(options.filename)
-   if options.verbose:
-      print 'Map:', options.filename
-      print m
+   mapgen()
+   
 if __name__ == "__main__":
 #   m = MapGen.from_coem('maps/tmap2.coem')
 #   print m

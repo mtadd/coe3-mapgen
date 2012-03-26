@@ -130,7 +130,7 @@ Ally yourself with 3 Jester level AI against 4 allied Knight-level AI on a huge 
 'teams': [1]*4+[2]*4,
 'map_size': MAPSIZE.Huge,
 'society': 'Fallen Empire',
-'options': 'Common cause: Off\tClustered start: On'
+'options': {'Common cause': 'Off', 'Clustered start': 'On'}
 }, {
 'title':'The Legions of Doom',
 'desc':'''The most egotistical alliance ever seen.
@@ -146,7 +146,7 @@ Ally yourself with 3 Jester level AI against 4 allied Baron-level AI on a huge m
 'levels': [0]+3*[AI.Jester]+4*[AI.Baron],
 'map_size': MAPSIZE.Huge,
 'society': 'Dawn of a New Empire',
-'options': 'Common cause: Off\tClustered start: On'
+'options': {'Common cause': 'Off', 'Clustered start': 'On'}
 }, {
 'title':'Flawless Victory',
 'desc':"""May the lightning of your glory be seen and the thunders of your onset heard from east to west, and be ye the avengers of noble blood." - William of Normandy
@@ -156,7 +156,7 @@ Defeat two allied Count-level AI on a huge map during the Dark Ages without losi
 'teams': [None,1,1],
 'map_size': MAPSIZE.Huge,
 'society': 'Dark Ages',
-'options':'Common cause: On\tCluster start: Off'
+'options': {'Common cause': 'Off', 'Clustered start': 'On'}
 }, {
 'title':'Anti-Progress',
 'desc':"""We do not ride on the railroad; it rides upon us" - Henry David Thoreau
@@ -167,7 +167,7 @@ Defeat 2 allied Knight-level AI on a large map with the society set as Dawn of a
 'levels': [0, AI.Knight, AI.Knight],
 'teams': [None,1,1],
 'society': 'Dawn of a New Empire',
-'options':'Common cause: On\tCluster start: Off'
+'options': {'Common cause': 'Off', 'Clustered start': 'On'}
 }, {
 'title':'The Witch Hunter',
 'desc':'''Make the land safe for your citizens. Why? So you get more taxes.
@@ -177,7 +177,7 @@ Defeat 3 allied Knight-level AI on a huge map with the society set to Empire.'''
 'teams': [None,1,1,1],
 'map_size': MAPSIZE.Large,
 'society': 'Empire',  
-'options':'Common cause: On\tCluster start: Off'
+'options': {'Common cause': 'Off', 'Clustered start': 'On'}
 }, {
 'title':'Sorcerer in the Middle',
 'desc':'''Put a stop to all the commotion outside so you can go back to your mountain and go to sleep.
@@ -189,14 +189,25 @@ Defeat all Marquis-level AI, which consists of two AI teams, on a huge map with 
 'teams': [None, 1, 1, 1, 1, 2, 2, 2],
 'map_size': MAPSIZE.Huge,
 'society': 'Monarchy',
-'options':'Common cause: On\tCluster start: Off'
+'options': {'Common cause': 'Off', 'Clustered start': 'On'}
+}, {
+'title':'Save the Peons',
+'desc':''' Your serfs are apt to complain, but now that they have started disappearing regularly you've determined that maybe there is something to their bickering...
+Defeat five allied Butler-level AI on a large map.''',
+'sets': {'A': [CLASS.Demonologist, CLASS.Priestess, CLASS.Bakemono,
+               CLASS.PriestKing, CLASS.HighCultist] },
+'classes': [CLASS.Baron, 'A', 'A', 'A', 'A', 'A'],
+'levels': [0] + [AI.Butler]*5,
+'teams': [None] + [1]*5,
+'map_size': MAPSIZE.Large,
+'society': 'Agricultural'
 }, {
 'title':'Political Tribulations',
 'desc':'''In order to get reelected, you'll have to be alive.
 The scenario can be downloaded from this post.''',
 'classes': [CLASS.Senator, CLASS.Necromancer],
 'levels': [0, AI.Knight],
-'options':'Special Map'
+'options':{'Map URL': 'http://ubuntuone.com/3w4a250e89binJ1tqeMfws'}
 }, {
 'title':'Disposing of a Despot',
 'desc':"""The Goths were now, on every side, surrounded and pursued by the Roman arms. The flower of their troops had perished in the long siege of Philippopolis, and the exhausted country could no longer afford subsistence for the remaining multitude of licentious barbarians. Reduced to this extremity, the Goths would gladly have purchased, by the surrender of all their booty and prisoners, the permission of an undisturbed retreat. But the emperor, confident of victory, and resolving, by the chastisement of these invaders, to strike a salutary terror into the nations of the North, refused to listen to any terms of accommodation. The high-spirited barbarians preferred death to slavery." - Edward Gibbon's History of the Decline and Fall Of the Roman Empire
@@ -217,7 +228,7 @@ Defeat 5 allied classes on a large map with the society set to agricultural.""",
 'teams': [None] + [1]*5,
 'map_size': MAPSIZE.Large,
 'society': 'Agricultural',
-'options':'Common cause: On\tCluster start: Off'
+'options': {'Common cause': 'Off', 'Clustered start': 'On'}
 }, {
 'title':'One Against the World',
 'desc':""" Ever feel like the whole world is out to get you?
@@ -227,7 +238,8 @@ Defeat 7 allied Jester-level AI on an enormous map using any class.""",
 'levels': [0] + 7*[AI.Jester],
 'teams': [None] + 7*[1],
 'society': 'Random',
-'options':'Common cause: On\tCluster start: Off\nPlayer can choose class'
+'options': {'Common cause': 'Off', 'Clustered start': 'On',
+            'Player Class': 'Choose Any'}
 }
 ]
 
@@ -239,23 +251,24 @@ def main(arg=None):
    i = int(arg)-1
    trial = TRIALS[i]
    print trial['title']
+   print '-'*len(trial['title'])
    print trial['desc']
 
-   if trial.has_key('map_size'):
-      print 'Map Size: {0}'.format(MAPSIZE[trial['map_size']])
-   if trial.has_key('society'):
-      print 'Society:', trial['society']
-   if trial.has_key('options'):
-      print trial['options']
-   
    i = 1
-   print 'Player\tTeam\tAI\tClass'
+   print '\nPlayer\tTeam\tAI\tClass'
    for c, l, t in pick_classes(trial['classes'],trial['levels'],
                       trial.get('teams',[]),trial.get('sets',{})):
       print '{0}\t{1}\t{2}\t{3}'.format(
                i,t,AI[l],CLASS[c])
       i += 1
-
+   print '='
+   if trial.has_key('map_size'):
+      print 'Map Size: {0}'.format(MAPSIZE[trial['map_size']])
+   if trial.has_key('society'):
+      print 'Society:', trial['society']
+   for k,v in trial.get('options',{}).iteritems():
+      print "{0}: {1}".format(k,v)
+   
 
 
 if __name__ == '__main__':
