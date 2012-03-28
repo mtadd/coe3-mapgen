@@ -1,0 +1,15 @@
+GAME_DIR=.
+GAME_LOG=$(date +"%R-%d-%b-%Y").log
+COE3_APP=~/Games/coe3.app/Contents/MacOS/coe3
+
+mkdir -p -v $GAME_DIR
+cd $GAME_DIR
+
+if [ "$1" == "-p" ]; then
+   GAME_LOG="$2-$GAME_LOG"
+   GAME_SAVE="$2-AUTOSAVE"
+   shift 2
+fi
+
+$COE3_APP --graphs --maxfps=10 --autosave=$GAME_SAVE --gamelog=$GAME_LOG $*
+

@@ -1,4 +1,9 @@
-import sys, mapgen
+#!/usr/bin/env python
+import sys
+import os
+import os.path
+from optparse import Values
+import mapgen
 
 class Enum(object): 
    def __init__(self, tuples):
@@ -58,8 +63,20 @@ AI = Enum([
    (10, "Emperor")  # 500%   
  ])
 
+SOCIETY = Enum([
+   (0, "Random"),
+   (1, "Dark Ages"),
+   (2, "Agricultural"),
+   (3, "Empire"),
+   (4, "Fallen Empire"),
+   (5, "Monarchy"),
+   (6, "Dawn of a New Empire")
+ ])
+
 MAPSIZE = Enum(["Tiny", "Small", "Large", "Huge", "Enormous"])
-      
+   
+MAP_DIMS = [ (30, 20), (40, 28), (50, 36), (60, 44), (70, 52) ]
+
 CLASS_ANY = [i for i,v in CLASS] 
 
 def choose_class(c,sets):
@@ -70,10 +87,12 @@ def choose_class(c,sets):
       return v
    return mapgen.choose(c)
 
-def pick_classes(classes, levels, teams=[],sets={}):
+def pick_classes(classes, levels, teams=None,sets=None):
    '''
    Returns an array of tuple (class, ai-level (0=human), team)
    '''
+   if teams is None: teams = range(1,1+len(classes))
+   if sets is None: sets = {}
    sets = dict(sets) #shallow copy
    return [(choose_class(c,sets), l, t) 
            for c, l, t in map(None, classes, levels, teams)]
@@ -86,11 +105,8 @@ TRIALS = [ {
 'desc':"Don't feel so bad, not everyone can be good at everything. Defeat one Knight-level AI on a large map.",
 'classes': [CLASS_ANY]*2,
 'levels': [AI.HUMAN, AI.KNIGHT],
-'player_class': CLASS_ANY,
-'ai_class': CLASS_ANY,
-'ai_level': AI.KNIGHT,
 'map_size': MAPSIZE.LARGE,
-'society': 'random' 
+'society': SOCIETY.Random
    }, {
 'title':"A Little Disagreement",
 'desc':"Small people, huge wars.  Defeat one Count-level AI on a small map.",
@@ -98,14 +114,14 @@ TRIALS = [ {
 'classes': 'A'*2,
 'levels': [0, AI.COUNT],
 'map_size': MAPSIZE.SMALL,
-'society': 'random' 
+'society': SOCIETY.Random
    }, {
 'title':"Eye for an Eye Justice",
 'desc':"You thought you were so special because you were the only one. Guess again.  Defeat one Count-level AI on a small map.",
 'classes': [[CLASS.PALE_ONE]]*2,
 'levels': [0,AI.COUNT],
 'map_size': MAPSIZE.SMALL,
-'society': 'random' 
+'society': SOCIETY.Random
    }, {
 'title':"A Part of the Tribe",
 'desc':"Everyone should be a part of the tribe, whether they want to be or not.  Defeat one Count-level AI on a large map.",
@@ -114,7 +130,7 @@ TRIALS = [ {
 'classes': [ [CLASS.BAKEMONO, CLASS.PRIEST_KING, CLASS.BARBARIAN], 'A' ],
 'levels': [0, AI.COUNT],
 'map_size': MAPSIZE.LARGE,
-'society': 'Dark Ages' 
+'society': SOCIETY.DarkAges
    }, {
 'title':"The Justice League",
 'desc':'''The forces of light are... rather undependable.
@@ -129,7 +145,7 @@ Ally yourself with 3 Jester level AI against 4 allied Knight-level AI on a huge 
 'levels': [0]+3*[AI.Jester]+4*[AI.Knight],
 'teams': [1]*4+[2]*4,
 'map_size': MAPSIZE.Huge,
-'society': 'Fallen Empire',
+'society': SOCIETY.FallenEmpire,
 'options': {'Common cause': 'Off', 'Clustered start': 'On'}
 }, {
 'title':'The Legions of Doom',
@@ -145,7 +161,7 @@ Ally yourself with 3 Jester level AI against 4 allied Baron-level AI on a huge m
 'teams': [1]*4+[2]*4,
 'levels': [0]+3*[AI.Jester]+4*[AI.Baron],
 'map_size': MAPSIZE.Huge,
-'society': 'Dawn of a New Empire',
+'society': SOCIETY.DawnofaNewEmpire,
 'options': {'Common cause': 'Off', 'Clustered start': 'On'}
 }, {
 'title':'Flawless Victory',
@@ -153,9 +169,9 @@ Ally yourself with 3 Jester level AI against 4 allied Baron-level AI on a huge m
 Defeat two allied Count-level AI on a huge map during the Dark Ages without losing a single commander.""",
 'classes': [CLASS.Baron, CLASS.DwarfQueen, CLASS.Barbarian],
 'levels': [0, AI.Count, AI.Count],
-'teams': [None,1,1],
+'teams': [1,2,2],
 'map_size': MAPSIZE.Huge,
-'society': 'Dark Ages',
+'society': SOCIETY.DarkAges,
 'options': {'Common cause': 'Off', 'Clustered start': 'On'}
 }, {
 'title':'Anti-Progress',
@@ -165,8 +181,8 @@ Defeat 2 allied Knight-level AI on a large map with the society set as Dawn of a
               CLASS.Bakemono, CLASS.HighCultist],
              CLASS.Baron, CLASS.Senator],
 'levels': [0, AI.Knight, AI.Knight],
-'teams': [None,1,1],
-'society': 'Dawn of a New Empire',
+'teams': [1,2,2],
+'society': SOCIETY.DawnofaNewEmpire,
 'options': {'Common cause': 'Off', 'Clustered start': 'On'}
 }, {
 'title':'The Witch Hunter',
@@ -174,9 +190,9 @@ Defeat 2 allied Knight-level AI on a large map with the society set as Dawn of a
 Defeat 3 allied Knight-level AI on a huge map with the society set to Empire.''',
 'classes': [CLASS.Baron, CLASS.Witch, CLASS.Necromancer, CLASS.Demonologist],
 'levels': [0] + [AI.Knight]*3,
-'teams': [None,1,1,1],
+'teams': [1]+3*[2],
 'map_size': MAPSIZE.Large,
-'society': 'Empire',  
+'society': SOCIETY.Empire,  
 'options': {'Common cause': 'Off', 'Clustered start': 'On'}
 }, {
 'title':'Sorcerer in the Middle',
@@ -186,9 +202,9 @@ Defeat all Marquis-level AI, which consists of two AI teams, on a huge map with 
           'B': [CLASS.Witch, CLASS.Priestess, CLASS.PriestKing] },
 'classes': [ CLASS.Bakemono, 'A', 'A', 'A', 'A', 'B', 'B', 'B'],
 'levels': [0] + 7*[AI.Marquis],
-'teams': [None, 1, 1, 1, 1, 2, 2, 2],
+'teams': [1]+4*[2]+3*[3],
 'map_size': MAPSIZE.Huge,
-'society': 'Monarchy',
+'society': SOCIETY.Monarchy,
 'options': {'Common cause': 'Off', 'Clustered start': 'On'}
 }, {
 'title':'Save the Peons',
@@ -198,9 +214,9 @@ Defeat five allied Butler-level AI on a large map.''',
                CLASS.PriestKing, CLASS.HighCultist] },
 'classes': [CLASS.Baron, 'A', 'A', 'A', 'A', 'A'],
 'levels': [0] + [AI.Butler]*5,
-'teams': [None] + [1]*5,
+'teams': [1] + 5*[2],
 'map_size': MAPSIZE.Large,
-'society': 'Agricultural'
+'society': SOCIETY.Agricultural
 }, {
 'title':'Political Tribulations',
 'desc':'''In order to get reelected, you'll have to be alive.
@@ -215,7 +231,7 @@ Defeat an Emperor-level AI Senator during the Empire society on an enormous map.
 'classes': [CLASS.Barbarian, CLASS.Senator],
 'levels': [0, AI.Emperor],
 'map_size': MAPSIZE.Enormous,
-'society': 'Empire'
+'society': SOCIETY.Empire
 }, {
 'title':'An Absolute Bash',
 'desc':""" Roam the countryside wreaking havoc. But that will make you a lot of enemies...
@@ -225,9 +241,9 @@ Defeat 5 allied classes on a large map with the society set to agricultural.""",
 'classes':[ CLASS.TrollKing, CLASS.Baron, CLASS.Witch, CLASS.Senator, 
             CLASS.Hoburg, 'A' ],
 'levels': [0] + 5*[AI.Knight],
-'teams': [None] + [1]*5,
+'teams': [1] + 5*[2],
 'map_size': MAPSIZE.Large,
-'society': 'Agricultural',
+'society': SOCIETY.Agricultural,
 'options': {'Common cause': 'Off', 'Clustered start': 'On'}
 }, {
 'title':'One Against the World',
@@ -236,42 +252,98 @@ Defeat 7 allied Jester-level AI on an enormous map using any class.""",
 'sets': { 'A': CLASS_ANY },
 'classes': 'A'*8,
 'levels': [0] + 7*[AI.Jester],
-'teams': [None] + 7*[1],
-'society': 'Random',
+'teams': [1] + 7*[2],
+'society': SOCIETY.Random,
 'options': {'Common cause': 'Off', 'Clustered start': 'On',
             'Player Class': 'Choose Any'}
 }
 ]
 
-def main(arg=None):
-   if arg is None:
-      for i, trial in enumerate(TRIALS):
-         print '{0}) {1}'.format(1+i,trial['title'])
-      arg = raw_input('Enter Trial [1-{0}]: '.format(len(TRIALS)))
-   i = int(arg)-1
-   trial = TRIALS[i]
+def trialgen(idx, mapdir, rungame):
+   trial = TRIALS[idx]
+    
    print trial['title']
    print '-'*len(trial['title'])
    print trial['desc']
 
    i = 1
    print '\nPlayer\tTeam\tAI\tClass'
-   for c, l, t in pick_classes(trial['classes'],trial['levels'],
-                      trial.get('teams',[]),trial.get('sets',{})):
+   
+   players = pick_classes(trial['classes'],trial['levels'],
+                      trial.get('teams',None),trial.get('sets',None))
+   for c, l, t in players:
       print '{0}\t{1}\t{2}\t{3}'.format(
                i,t,AI[l],CLASS[c])
       i += 1
    print '='
-   if trial.has_key('map_size'):
-      print 'Map Size: {0}'.format(MAPSIZE[trial['map_size']])
-   if trial.has_key('society'):
-      print 'Society:', trial['society']
+   mapdim = MAP_DIMS[trial['map_size']]
+   print 'Map Size: {0} ({1}x{2})'.format(
+         MAPSIZE[trial['map_size']],mapdim[0], mapdim[1])
+   print 'Society:', SOCIETY[trial['society']]
    for k,v in trial.get('options',{}).iteritems():
       print "{0}: {1}".format(k,v)
+
+   mapname = 'trial{0}'.format(idx+1)
+   mapgen.options.filename = os.path.join(options.mapdir,
+         '{0}.coem'.format(mapname)) 
+   mapgen.options.basic = True
+   mapgen.options.mapwidth = mapdim[0]
+   mapgen.options.mapheight = mapdim[1]
+   mapgen.mapgen()
+
+   f = open(mapgen.options.filename,'a')
+   f.write('\n')
+  
+   f.write( 'mapdescr "{0}^^{1}"\n'.format(trial['title'],
+      trial['desc'].replace('\n','^').replace('"',"'")))
+   i = 1
+   for c, l, t in players:
+      f.write( 'fixedplayer {0} {1} {2} {3} {4}\n'.format(
+         i, c, t if t > 0 else 0, 0 if l == 0 else 1, l))
+      i += 1 
+   f.close()
+   
+   if rungame:
+      cmd = './run_coe3 -p {0} --loadmap={0} --society={1}'.format(
+         mapname, trial['society'])
+      print cmd
+      os.system(cmd)
+
+   
+   
+
+default_options = {
+   'version': '0.1',
+   'mapdir': './coe3.app/Contents/Resources/maps',
+   'rungame': False
+   }
+options = Values(default_options) 
+
+def trials_main():
+   from optparse import OptionParser, OptionGroup
+   description='''Conquest of Elysium 3 - Trial By Fire scenario map generator.
+Default values for options given in parentheses.'''
+
+   global options
+   parser = OptionParser(description=description, version=options.version)
+   parser.set_defaults(**default_options)
+   parser.add_option("-d","--mapdir",dest="mapdir", help="Game map directory")
+   parser.add_option("-r","--rungame",action="store_true",dest="rungame")
+
+   (options, args) = parser.parse_args()
+
+   arg = args[0] if len(args) > 0 else None
+   if arg is None:
+      for i, trial in enumerate(TRIALS):
+         print '{0}) {1}'.format(1+i,trial['title'])
+      arg = raw_input('Enter Trial [1-{0}]: '.format(len(TRIALS)))
+   i = int(arg)-1
+   
+   trialgen(i, options.mapdir, options.rungame)
+
    
 
 
 if __name__ == '__main__':
-   arg = sys.argv[1] if len(sys.argv) > 1 else None
-   main(arg)
+   trials_main()
 
