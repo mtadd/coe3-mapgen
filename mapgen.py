@@ -207,7 +207,7 @@ class MapGen(object):
          
    def shape_land(self,prob,border,repeat=1,r=5):
       it = 0
-      while it < 20:
+      while it < 100:
          it += 1
          if options.verbose:
             print "Shaping land iteration", it
