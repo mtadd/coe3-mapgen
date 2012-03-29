@@ -22,6 +22,7 @@ TA_FORESTS = (2,4)
 TA_MOUNTAINS = (12,71)
 TA_HILLS = (73,74)
 TA_LAKES = (10,11)
+TA_BRIDGES = (48, 49, 168, 169, 178, 179, 186, 187)
 
 COASTS = [
  (TA_LAKES, ['.','.','.', '.','c','.', '.','.','.']),
@@ -34,7 +35,7 @@ COASTS = [
  (62, ['c.', 'c', 'c#', '.', 'c', 'c', 'c.', '.', 'c.']),
  (63, ['c#', 'c', 'c.', 'c', 'c', '.', 'c.', '.', 'c.']),
  (64, ['.', 'c', '#c', 'c', 'c', 'c#', 'c#', 'c#', 'c#']),
-# (65, ['c.', '.', 'c.', 'c.', 'c', 'c.', 'c#', 'c#', 'c#']),
+ (65, ['c.', '~', 'c.', 'c.', 'c', 'c.', 'c#', 'c#', 'c#']),
  (66, ['#c', 'c', '.', '#c', 'c', 'c', '#c', '#c', 'c#']),
  (67, ['c#', 'c#', 'c#', '#c', 'c', 'c', 'c#', 'c', '.']),
  (68, ['c#', '#c', '#c', 'c', 'c', '#c', '.', 'c', '#c']),
@@ -64,6 +65,21 @@ COASTS = [
  (152, ['#c', 'c', 'c.', 'c', 'c', '.', '.', 'c', 'c.'])
 ] 
 
+RIVERS = [
+(40, {'...~~~..~': 3, '..~~~~...': 2, '...~~~...': 4, '~..~~~..~': 1, '~..~~~...': 1, '...~~~..~': 1, '~..~~~...': 1, '...~~~~..': 2}),
+(41, {'..~~~~...': 1, '....~~...': 1, '..~~~~~..': 2, '~..~~~..~': 1, '..~~~~~..': 1, '~..~~~...': 1, '...~~~...': 1, '...~~~...': 7, '...~~~~..': 2}),
+(42, {'.~~.~..~.': 4, '~~.~~....': 1, '.~..~....': 1, '~~..~..~.': 1, '.~.~~.~~.': 1, '.~~.~~...': 1, '.~..~..~~': 3, '.~..~..~.': 1, '~~.~~.~~.': 2, '.~..~..~.': 1, '.~..~....': 1, '.~..~..~.': 16, '....~..~.': 1, '.~~.~~.~~': 1, '....~..~.': 1, '~~.~~.~~.': 1, '.~..~....': 1, '.~..~....': 1, '.~..~.~~.': 1}),
+(43, {'.~..~.~~.': 4, '....~..~.': 1, '~~..~..~.': 3, '....~..~~': 1, '.~..~..~.': 1, '.~~.~~~~~': 1, '~~.~~.~~~': 1, '.~.~~.~~.': 1, '~~~.~~.~~': 2, '.~..~..~.': 1, '.~..~..~.': 11, '~~..~.~~.': 1, '.~~.~..~.': 1, '.~..~....': 1, '.~~.~..~.': 2, '~~..~..~.': 1, '.~~.~....': 1, '.~..~....': 1, '.~..~..~~': 2, '.~..~....': 1}),
+(44, {'.~.~~.~..': 1, '.~.~~....': 4, '.~.~~....': 1, '.~.~~....': 1, '.~~~~~...': 1}),
+(45, {'.~..~~...': 1, '....~~..~': 1, '~~.~~~...': 1, '.~..~~...': 3, '.~..~~...': 1, '.~..~~..~': 2, '~~..~~...': 1, '~~..~~...': 1}),
+(46, {'~.~~~~.~~': 1, '....~..~~': 1, '....~..~.': 1, '...~~..~.': 5, '....~..~.': 1, '...~~..~~': 2, '~..~~....': 1, '~..~~..~.': 1, '..~~~~.~~': 1, '...~~..~.': 1}),
+(47, {'..~.~~.~.': 1, '....~~.~.': 1, '....~~.~.': 8}),
+(48, {'...~~~..~': 1, '..~~~~...': 1, '...~~~...': 1, '~..~~~...': 2, '...~~~..~': 1, '...~~~~..': 1}),
+(49, {'.~..~..~.': 5, '.~..~....': 1, '.~..~..~.': 1, '....~..~.': 2, '.~..~..~.': 1, '~~..~..~.': 1, '.~~.~..~.': 1, '.~~.~....': 1, '.~..~.~~.': 3}),
+(52, {'...~~....': 1, '...~~.~..': 1})
+] 
+
+
 RESOURCES = [
 # test       prob  Terrain:weight pairs
  (T_PLAIN,     10,{5:2,6:2,7:2,8:1,9:1,17:1,18:1}),
@@ -89,10 +105,14 @@ def is_land(t):
 def is_hill(t):
    return t in TA_HILLS
 
+def is_river(t): #include bridges
+   return 40 <= t <= 55 or 170 <= t <= 189 or t == 195
+
 TERRAIN_STR = [
    (T_SEA,              '#'),
    (is_coastal_village, '+'),
    (is_coastal,         'c'),
+   (is_river,           '~'),
    (is_hill,            'n'),
    (T_MOUNTAIN,         '^'),
    (T_HIGH_MOUNTAIN,    'M'),
@@ -230,8 +250,11 @@ class MapGen(object):
             self.clear_land()
             break
 
-   def clear_land(self):
-      self.seed(100,T_PLAIN)
+   def clear_land(self,mask=None):
+      if mask is None:
+         self.seed(100,T_PLAIN)
+      else:
+         self.seed(100,T_PLAIN,mask=mask)
         
    def raise_mountains(self,repeat=3,prob=40):
       if repeat == 0: return
@@ -380,14 +403,15 @@ class MapGen(object):
                      for y in range(self.height)]
       return '\n'.join(map(lambda n: ''.join(map(terrain_to_str,n)),transposed))
 
-def scan_coast_frequencies(files):
+def scan_terrains(files, clear_mask, test):
    hist = {}
    for f in files: 
       print f
       m = MapGen.from_coem(f)
+      m.clear_land(clear_mask)
       print m
       for x,y,terr in m.itermap():
-         if is_coastal(terr):
+         if test(terr):
             key = ''.join([ ''.join([ terrain_to_str(m.map[x+i][y+j]) 
                   for i in range(-1,2)]) for j in range(-1,2)])
             z = hist.get(key,{})
@@ -404,6 +428,21 @@ def scan_coast_frequencies(files):
       re = [ ''.join(list(set([k[i] for k in v.keys()]))) for i in range(9) ]
       res[t] = re 
    return hist, tiles, res
+
+def print_scan(hist, tiles, res):
+   print 'Hist:'
+   for k in hist: print k, hist[k] 
+   print 'Tiles:'
+   for k in tiles: print k, tiles[k]
+   print 'Res:'
+   for k  in res: print k, res[k]
+
+def scan_coast_frequencies(files):
+   return scan_terrains(files, lambda x,y,t: is_land(t), is_coastal)
+
+def scan_river_frequences(files):
+   return scan_terrains(files, lambda x,y,t: is_land(t) and not is_river(t),
+         is_river)
 
 default_options = {
    'version':'0.2',
@@ -432,9 +471,16 @@ default_options = {
    }
 options = Values(default_options)
 
-def mapgen():
+def mapgen(args):
    if options.mode == "SCAN":
-      print scan_coast_frequencies(args)
+      key = args[0].lower()
+      files = args[1:]
+      if key.startswith('coast'):
+         print_scan(*scan_coast_frequencies(files))
+      elif key.startswith('river'):
+         print_scan(* scan_river_frequences(files))
+      else: 
+         print 'Usage: -m SCAN (coast|river) <map files>'
       return
    elif options.mode == "SHOW":
       m = MapGen.from_coem(options.filename)
@@ -524,7 +570,7 @@ Default values for options given in parentheses.'''
 
    parser.add_option_group(group)
    (options, args) = parser.parse_args()
-   mapgen()
+   mapgen(args)
    
 if __name__ == "__main__":
 #   m = MapGen.from_coem('maps/tmap2.coem')
