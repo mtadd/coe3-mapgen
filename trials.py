@@ -78,7 +78,7 @@ MAPSIZE = Enum(["Tiny", "Small", "Large", "Huge", "Enormous"])
    
 MAP_DIMS = [ (30, 20), (40, 28), (50, 36), (60, 44), (70, 52) ]
 
-CLASS_ANY = [i for i,v in CLASS] 
+CLASS_ANY = [i for i,v in CLASS if i > 0] 
 
 def choose(c,sets):
    if isinstance(c,str) and sets.has_key(c):
