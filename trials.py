@@ -288,24 +288,25 @@ def trialgen(num, mapdir, rungame):
    trial = TRIALS[idx]
     
    mapname = 'trial{0}'.format(num)
-   cmd_options = [ '-p {0}'.format(mapname), '--loadmap={0}'.format(mapname)]
    mapgen.options.filename = os.path.join(mapdir, '{0}.coem'.format(mapname)) 
-
    map_url = trial.get('options',{}).get('map url',None)
-   if map_url:
-      cmd = 'curl -o {0} {1}'.format(mapgen.options.filename,
-         trial['options']['map url'])
-      print cmd
-      os.system(cmd)
-   else:
+   if not map_url:
       mapdim = MAP_DIMS[trial['map_size']]
-      mapgen.options.basic = True
-      mapgen.options.mapwidth = mapdim[0]
-      mapgen.options.mapheight = mapdim[1]
-      mapgen.mapgen()
+
+   if options.mapgen:
+      if map_url:
+         cmd = 'curl -o {0} {1}'.format(mapgen.options.filename,
+            trial['options']['map url'])
+         print cmd
+         os.system(cmd)
+      else:
+         mapgen.options.basic = True
+         mapgen.options.mapwidth = mapdim[0]
+         mapgen.options.mapheight = mapdim[1]
+         mapgen.mapgen()
 
    title = 'Trial By Fire {0}: {1}'.format(num, trial['title'])
-   output = [title, '-'*len(title)] 
+   output = ['',title, '-'*len(title)] 
    output.extend(trial['desc'].split('\n'))
 
    if not map_url:
@@ -316,48 +317,61 @@ def trialgen(num, mapdir, rungame):
       for k,v in trial.get('options',{}).iteritems():
          output.append("{0}: {1}".format(k,v))
 
-      f = open(mapgen.options.filename,'a')
-      f.write('\n')
-     
-      f.write( 'mapdescr "{0}"\n'.format(
-        '^'.join(map(lambda s: s.replace("\n","^").replace('"',"'"),output)) 
-         ))
+      mapfile = None
+      if options.mapgen:
+         mapfile = open(mapgen.options.filename,'a')
+         f.write('\n')
+         f.write( 'mapdescr "{0}"\n'.format(
+           '^'.join(map(lambda s: s.replace("\n","^").replace('"',"'"),output)) 
+            ))
+
       output.append('')
       output.append('Player\tTeam\tAI\tClass')
       players = pick_players(trial['classes'],trial['levels'],
                          trial.get('teams',None),trial.get('sets',None))
-
       for i, c, l, t in players:
          output.append( '{0}\t{1}\t{2}\t{3}'.format(
                   i,t,AI[l],CLASS[c] if c != 0 else 'Player Choice'))
-         f.write( 'fixedplayer {0} {1} {2} {3} {4}\n'.format(
-            i, c, t if t > 0 else 0, 0 if l == 0 else 1, l))
-      f.close()
+         if mapfile:
+            mapfile.write( 'fixedplayer {0} {1} {2} {3} {4}\n'.format(
+               i, c, t if t > 0 else 0, 0 if l == 0 else 1, l))
+      if mapfile: mapfile.close()
    
-   for line in output:
-      print line
+   for line in output: print line
 
-   print "Map saved at:", mapgen.options.filename
-   
-   if trial.has_key('society'): 
-      cmd_options.append( '--society={0}'.format(trial['society']))
-   if trial.has_key('options'):
-      if trial['options'].get('Common cause',False) == True:
-         cmd_options.append('--commoncause')
-      if trial['options'].get('Cluster start',False) == True:
-         cmd_options.append('--clusterstart')
-
-   cmd = './run_coe3 {0}'.format(' '.join(cmd_options))
-   print cmd
-   if rungame: 
-      os.system(cmd)
+   if mapfile: 
+      print "Map saved at:", mapgen.options.filename
+      cmd_options = [ '-p {0}'.format(mapname), '--loadmap={0}'.format(mapname)]
+      if trial.has_key('society'): 
+         cmd_options.append( '--society={0}'.format(trial['society']))
+      if trial.has_key('options'):
+         if trial['options'].get('Common cause',False) == True:
+            cmd_options.append('--commoncause')
+         if trial['options'].get('Cluster start',False) == True:
+            cmd_options.append('--clusterstart')
+      cmd = './run_coe3 {0}'.format(' '.join(cmd_options))
+      print cmd
+      if rungame: os.system(cmd)
 
 default_options = {
    'version': '0.1',
    'mapdir': './coe3.app/Contents/Resources/maps',
-   'rungame': False
+   'rungame': False,
+   'mapgen': True
    }
 options = Values(default_options) 
+
+def print_columns(ncols, keyL):
+   maxlen = str(max(map(len,keyL)))
+   fmt = "  %2d) %-" + maxlen + "s"
+   rows = len(keyL) // ncols
+   j = 0
+   while j < len(keyL):
+      for i in range(ncols):
+         if j+i < len(keyL):
+            print fmt % (1+j+i, keyL[j+i]),
+      print ""       
+      j += ncols 
 
 def trials_main():
    from optparse import OptionParser, OptionGroup
@@ -369,17 +383,27 @@ Default values for options given in parentheses.'''
    parser.set_defaults(**default_options)
    parser.add_option("-d","--mapdir",dest="mapdir", help="Game map directory")
    parser.add_option("-r","--rungame",action="store_true",dest="rungame")
+   parser.add_option("--nomap",action="store_false",dest="mapgen")
 
    (options, args) = parser.parse_args()
 
    arg = args[0] if len(args) > 0 else None
-   if arg is None:
-      for i, trial in enumerate(TRIALS):
-         print '{0}) {1}'.format(1+i,trial['title'])
-      arg = raw_input('Enter Trial [1-{0}]: '.format(len(TRIALS)))
-   num = int(arg)
-   trialgen(num, options.mapdir, options.rungame)
+   interactive = len(args) == 0
+   doloop = True
+   while doloop:
+      if interactive:
+         print_columns(2, [t['title'] for t in TRIALS])
+         arg = raw_input('Enter Trial [1-{0}]: '.format(len(TRIALS)))
+      else:
+         doloop = False
 
+      try:
+         num = int(arg)
+         trialgen(num, options.mapdir, options.rungame)
+         doloop = False
+      except:
+         print '\n*** Input must be a number between 1 and {0}\n'.format(
+               len(TRIALS))
    
 
 

@@ -471,7 +471,7 @@ default_options = {
    }
 options = Values(default_options)
 
-def mapgen(args):
+def mapgen(args=[]):
    if options.mode == "SCAN":
       key = args[0].lower()
       files = args[1:]
