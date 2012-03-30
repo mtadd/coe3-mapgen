@@ -398,8 +398,10 @@ Default values for options given in parentheses.'''
    parser = OptionParser(description=description, version=options.version)
    parser.set_defaults(**default_options)
    parser.add_option("-d","--mapdir",dest="mapdir", help="Game map directory")
-   parser.add_option("-r","--rungame",action="store_true",dest="rungame")
-   parser.add_option("--nomap",action="store_false",dest="mapgen")
+   parser.add_option("-r","--rungame",action="store_true",dest="rungame",
+         help="Run game with the selected trial")
+   parser.add_option("--nomap",action="store_false",dest="mapgen",
+         help="Just show trial description")
 
    (options, args) = parser.parse_args()
 
@@ -409,7 +411,11 @@ Default values for options given in parentheses.'''
    while doloop:
       if interactive:
          print_columns(2, [t['title'] for t in TRIALS])
-         arg = raw_input('Enter Trial [1-{0}]: '.format(len(TRIALS)))
+         try:
+            arg = raw_input('Enter Trial [1-{0}]: '.format(len(TRIALS)))
+         except KeyboardInterrupt:
+            print ''
+            break
       else:
          doloop = False
 

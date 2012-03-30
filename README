@@ -1,3 +1,21 @@
+TRIALS
+======
+Usage: trials.py [options]
+
+Conquest of Elysium 3 - Trial By Fire scenario map generator. Default values
+for options given in parentheses.
+
+Options:
+  --version             show program's version number and exit
+  -h, --help            show this help message and exit
+  -d MAPDIR, --mapdir=MAPDIR
+                        Game map directory
+  -r, --rungame         Run game with the selected trial
+  --nomap               Just show trial description
+
+
+MAPGEN
+======
 Usage: mapgen.py [options]
 
 Conquest of Elysium 3 random map generator. Default values for options given
@@ -35,14 +53,3 @@ Options:
                         (20)
     --basic             Add mountains and forests, and set addfancyterrain in
                         map
-Usage: trials.py [options]
-
-Conquest of Elysium 3 - Trial By Fire scenario map generator. Default values
-for options given in parentheses.
-
-Options:
-  --version             show program's version number and exit
-  -h, --help            show this help message and exit
-  -d MAPDIR, --mapdir=MAPDIR
-                        Game map directory
-  -r, --rungame         
