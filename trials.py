@@ -249,6 +249,22 @@ The scenario can be downloaded from this post.''',
 'map_size': MAPSIZE.Huge,
 'society': SOCIETY.FallenEmpire
 }, {      
+'title':'Curses!',
+'desc':'''"Sweet love, I see, changing his property,
+Turns to the sourest and most deadly hate:
+Again uncurse their souls; their peace is made
+With heads, and not with hands; those whom you curse
+Have felt the worst of death's destroying wound
+And lie full low, graved in the hollow ground."
+- William Shakespeare's King Richard the Second
+Defeat four allied AI enemies (one Duke and three Counts) on a large map with a random society.''',
+'classes': [CLASS.Priestess, CLASS.Demonologist, CLASS.Bakemono, CLASS.PriestKing, CLASS.HighCultist],
+'levels': [AI.Human, AI.Duke] + 3*[AI.Count],
+'options': { 'Common cause': True, 'Clustered start': False }, 
+'teams': [1]+4*[2],
+'map_size' : MAPSIZE.Large,
+'society' : SOCIETY.Random,
+}, {
 'title':'Disposing of a Despot',
 'desc':"""The Goths were now, on every side, surrounded and pursued by the Roman arms. The flower of their troops had perished in the long siege of Philippopolis, and the exhausted country could no longer afford subsistence for the remaining multitude of licentious barbarians. Reduced to this extremity, the Goths would gladly have purchased, by the surrender of all their booty and prisoners, the permission of an undisturbed retreat. But the emperor, confident of victory, and resolving, by the chastisement of these invaders, to strike a salutary terror into the nations of the North, refused to listen to any terms of accommodation. The high-spirited barbarians preferred death to slavery." - Edward Gibbon's History of the Decline and Fall Of the Roman Empire
 Defeat an Emperor-level AI Senator during the Empire society on an enormous map.""",
