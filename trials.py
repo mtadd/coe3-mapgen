@@ -336,8 +336,8 @@ def trialgen(num, mapdir, rungame):
       mapfile = None
       if options.mapgen:
          mapfile = open(mapgen.options.filename,'a')
-         f.write('\n')
-         f.write( 'mapdescr "{0}"\n'.format(
+         mapfile.write('\n')
+         mapfile.write( 'mapdescr "{0}"\n'.format(
            '^'.join(map(lambda s: s.replace("\n","^").replace('"',"'"),output)) 
             ))
 
@@ -421,12 +421,14 @@ Default values for options given in parentheses.'''
 
       try:
          num = int(arg)
-         trialgen(num, options.mapdir, options.rungame)
+         if num < 0 or num > len(TRIALS): raise IndexError
          doloop = False
       except:
          print '\n*** Input must be a number between 1 and {0}\n'.format(
                len(TRIALS))
-   
+         continue
+
+      trialgen(num, options.mapdir, options.rungame)
 
 
 if __name__ == '__main__':
