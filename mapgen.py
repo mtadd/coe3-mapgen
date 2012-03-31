@@ -483,7 +483,7 @@ default_options = {
    'mapheight':36,
    'filename':'map.coem',
    'border':2,
-   'big_islands':True,
+   'big_islands':False,
    'inland_seas':True,
    'landprob':55,
    'landsteps':5,
