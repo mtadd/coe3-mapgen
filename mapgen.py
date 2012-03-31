@@ -1,9 +1,25 @@
 #!/usr/bin/env python
+import sys
 import types
 import random
 from optparse import Values
 import itertools
 import copy
+
+#legacy support
+if sys.version_info < (2,6):
+   import re
+
+if sys.version_info < (2,5):
+   def any(iterable):
+      for i in iterable:
+         if i: return True
+      return False
+
+   def all(iterable):
+      for i in iterable:
+         if not i: return False
+      return True
 
 T_PLAIN = 0
 T_SEA = 69
@@ -135,7 +151,6 @@ TERRAIN_STR = [
    (lambda t: True,     '+')
    ]
 
-
 def terrain_to_str(t):
    for test, ch in TERRAIN_STR:
       if test_terrain(t,test): 
@@ -182,8 +197,18 @@ def djikstra_map(m,wall):
 
 def print_djikstra_map(m,wall):
    transposed = [ [ m[x][y] for x in range(m.width)] for y in range(m.height)]
-   print '\n'.join(map(lambda n: ''.join(map(
-      lambda i: str(i) if i < 10 else '*',n)),transposed))
+   def func(i):
+      if i < 10: return str(i)
+      return '*'
+
+   print '\n'.join(map(lambda n: ''.join(map(func,n)),transposed))
+
+def format(fmt, *args):
+   if sys.version_info < (2,6):
+      return re.sub("{.+?}","%s",fmt) % tuple(map(str,args))
+   else:
+      return fmt.format(*args)
+
 
 class MapGen(object):
    def __init__(self,width,height):
@@ -226,7 +251,10 @@ class MapGen(object):
       for x,y,t in self.itermap():
          if mask and not mask(x,y,t): continue
          if random.randrange(100) < prob:
-            nt = terr() if isinstance(terr,types.FunctionType) else choose(terr)
+            if isinstance(terr,types.FunctionType):
+               nt = terr()
+            else:
+               nt = choose(terr)
             if nt != t:
                self.map[x][y] = nt
                count += 1
@@ -393,7 +421,7 @@ class MapGen(object):
                bad_coasts += 1
          if bad_coasts > 0:
             if options.verbose:
-               print "Reshaping {0} coast.".format(bad_coasts)
+               print format("Reshaping {0} coast.",bad_coasts)
          else:
             break
 
@@ -489,18 +517,18 @@ class MapGen(object):
 
    def to_coem(self,filename="map.coem"):
       f = open(filename,'w')
-      f.write("# Created by MapGen.py v{0}\n".format(options.version))
-      f.write("\n#options {0}\n".format(options))
+      f.write(format("# Created by MapGen.py v{0}\n",options.version))
+      f.write(format("\n#options {0}\n",options))
       for y in range(self.height):
          f.write("\n#  ")
          for x in range(self.width):
             f.write(terrain_to_str(self.map[x][y]))
 
-      f.write("\nmapsize {0} {1}\n".format(self.width,self.height))
+      f.write(format("\nmapsize {0} {1}\n",self.width,self.height))
       for y in range(self.height):
-         f.write("terrainrow {0} ".format(y))
+         f.write(format("terrainrow {0} ",y))
          for x in range(self.width):
-            f.write("{0},".format(self.map[x][y]))
+            f.write(format("{0},",self.map[x][y]))
          f.write("\n")
 
       if options.basic:
