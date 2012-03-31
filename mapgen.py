@@ -2,6 +2,8 @@
 import types
 import random
 from optparse import Values
+import itertools
+import copy
 
 T_PLAIN = 0
 T_SEA = 69
@@ -17,6 +19,8 @@ T_RANDOM = 35
 T_RANDOM_RARE = 99
 T_LAKE1 = 10
 T_LAKE2 = 11
+T_RIVER_MOUTH = 65
+T_RIVER = 40
 
 TA_FORESTS = (2,4)
 TA_MOUNTAINS = (12,71)
@@ -64,6 +68,13 @@ COASTS = [
  (151, ['.', 'c', '.c', 'c', 'c', '.', '#c', 'c', 'c.']),
  (152, ['#c', 'c', 'c.', 'c', 'c', '.', '.', 'c', 'c.'])
 ] 
+
+'''
+RIVER_DELTAS = [
+ ( ((), {(40,41):17, 48:2, 169:1} ),
+ ( ((0,2),(0,-2)), {(42,43):17, 49:2, 168:1} )
+]
+'''  
 
 RIVERS = [
 (40, {'...~~~..~': 3, '..~~~~...': 2, '...~~~...': 4, '~..~~~..~': 1, '~..~~~...': 1, '...~~~..~': 1, '~..~~~...': 1, '...~~~~..': 2}),
@@ -155,11 +166,36 @@ def choose(arg):
    else:
       raise ValueError("choose: arg invalid: " + repr(arg))
 
+def djikstra_map(m,wall):
+#   deltas = list(itertools.product([-1,0,1],repeat=2))
+#   deltas.remove(0,0)
+   deltas = [(-1,0),(1,0),(0,1),(0,-1)]   
+   c = 1
+   while c > 0:
+      c = 0
+      for x,y,v in m.itermap():
+         if v == wall: continue 
+         v2 = min([m[x+dx][y+dy] for dx, dy in deltas if m.in_range(x+dx,y+dy)])
+         if v > v2 + 1:
+            m[x][y] = v2 + 1
+            c += 1
+
+def print_djikstra_map(m,wall):
+   transposed = [ [ m[x][y] for x in range(m.width)] for y in range(m.height)]
+   print '\n'.join(map(lambda n: ''.join(map(
+      lambda i: str(i) if i < 10 else '*',n)),transposed))
+
 class MapGen(object):
    def __init__(self,width,height):
       self.width = width
       self.height = height
       self.initmap()
+
+   def __iter__(self):
+      return self.itermap()
+
+   def __getitem__(self,x):
+      return self.map[x]
 
    def initmap(self):
       self.map = [[T_SEA for i in range(self.height)] 
@@ -213,7 +249,7 @@ class MapGen(object):
             print 'Seed'
             print self
       for step in range(steps):
-         nmap = eval(repr(self.map))
+         nmap = copy.deepcopy(self.map)
          for x,y,t in self.itermap():
             if mask and not mask(x,y,t): continue
             val = sum(map(lambda a: a[2]*self.R(x,y,a[0],a[1]),kernel))
@@ -360,7 +396,7 @@ class MapGen(object):
                print "Reshaping {0} coast.".format(bad_coasts)
          else:
             break
-      
+
    def create_coastline(self):
       self.sanitize_coastline()
       for x,y,t in self.itermap():
@@ -387,6 +423,69 @@ class MapGen(object):
       for x,y,t in self.itermap():
          if is_coastal(t):
             self.map[x][y] = T_SEA
+
+   def create_rivers(self):
+      # create heightmap
+      m = copy.deepcopy(self)
+      wall = 255
+      for x,y,t in m:
+         if t == T_SEA: 
+            m[x][y] = wall
+         elif is_coastal(t): 
+            m[x][y] = 0
+         else:
+            m[x][y] = wall - 1
+      djikstra_map(m,wall)
+      print_djikstra_map(m,wall)
+      i = 1
+      self.rivers = []
+      for x,y,t in self:
+         if t == 58 and random.randrange(100) < 10:
+            if y == 0 or m[x][y-1] == 0: continue
+            river = self.create_river(x,y,m)
+            if len(river) > 0:
+               self.rivers.append(river)
+
+   def create_river(self, x, y, heightmap):
+      deltas = [(-1,0),(1,0),(0,1),(0,-1)]   
+      river = [(x,y),(x,y-1)]
+      while True:
+         x, y = river[-1]
+         height = heightmap[x][y]
+         nextr = {None: 1}
+         for dx, dy in deltas:
+            nexth = heightmap[x+dx][y+dy] 
+            if nexth >= height and (x+dx,y+dy) not in river:
+               nextr[(x+dx,y+dy)] = 4*(nexth-height+1)**2
+         r = random.randrange(sum(nextr.values()))
+         for k,v in nextr.iteritems():
+            if r < v: 
+               nextr = k 
+               break
+            r -= v
+         if nextr:
+            river.append(nextr)
+         else:
+            break
+      if len(river) > 3:
+         self[river[0][0]][river[0][1]] = 65
+         for x,y in river[1:]:
+            self[x][y] = T_RIVER
+      else: 
+         river = []
+      return river
+
+   def place_rivers(self):
+      if self.rivers: 
+         tiles = set()
+         for r in self.rivers:
+            if any([coord in tiles for coord in r]):
+               continue
+            self[r[0][0]][r[0][1]] = 65
+            for coord in r[1:]:
+               x, y = coord
+               tiles.add(coord)
+               self[x][y] = T_RIVER
 
    def to_coem(self,filename="map.coem"):
       f = open(filename,'w')
@@ -431,6 +530,8 @@ class MapGen(object):
       transposed = [[self.map[x][y] for x in range(self.width)] 
                      for y in range(self.height)]
       return '\n'.join(map(lambda n: ''.join(map(terrain_to_str,n)),transposed))
+
+
 
 def scan_terrains(files, clear_mask, test):
    hist = {}
@@ -501,6 +602,7 @@ default_options = {
    'randomradius':50,
    'rareprob':1,
    'rareradius':20,
+   'rivers':False
    }
 options = Values(default_options)
 
@@ -523,6 +625,8 @@ def mapgen(args=[]):
                    repeat=options.landsteps,r=options.landr)
       if options.coast:
          m.create_coastline()
+         if options.rivers:
+            m.create_rivers()
       else:
          m.clear_coast()
       m.clear_land()
@@ -536,6 +640,8 @@ def mapgen(args=[]):
                mask=m.mask_radius(options.randomradius))
          m.seed(options.rareprob,T_RANDOM_RARE,
                mask=m.mask_radius(options.rareradius))
+      if options.rivers:
+         m.place_rivers()
       m.to_coem(options.filename)
    if options.verbose:
       print 'Map:', options.filename
@@ -605,6 +711,7 @@ Default values for options given in parentheses.'''
                help="Add mountains and forests, and set addfancyterrain in map")
    group.add_option("--no-inland-seas",action="store_false",dest="inland_seas")
    group.add_option("--big-islands",action="store_true",dest="big_islands")
+   group.add_option("--rivers",action="store_true",dest="rivers")
 
 
    parser.add_option_group(group)

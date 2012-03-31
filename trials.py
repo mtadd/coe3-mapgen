@@ -346,7 +346,7 @@ def trialgen(num, mapdir, rungame):
       output.append('Player\tTeam\tAI\tClass')
       players = pick_players(trial['classes'],trial['levels'],
                          trial.get('teams',None),trial.get('sets',None))
-      for i, c, l, t in players:
+      for i, c, l, t in players:         
          output.append( '{0}\t{1}\t{2}\t{3}'.format(
                   i,t,AI[l],CLASS[c] if c != 0 else 'Player Choice'))
          if mapfile:
