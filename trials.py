@@ -97,7 +97,7 @@ def pick_players(classes, levels, teams=None,sets=None):
    players = range(1,1+len(classes))
    sets = dict(sets) #shallow copy
    return [(i,choose(c,sets), choose(l,sets), t) 
-           for i, c, l, t in map(None, players, classes, levels, teams)]
+           for i, c, l, t in zip(players, classes, levels, teams)]
 
 
 
