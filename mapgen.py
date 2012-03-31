@@ -114,8 +114,8 @@ TERRAIN_STR = [
    (is_coastal,         'c'),
    (is_river,           '~'),
    (is_hill,            'n'),
-   (T_MOUNTAIN,         '^'),
    (T_HIGH_MOUNTAIN,    'M'),
+   (T_MOUNTAIN,         '^'),
    (T_PLAIN,            '.'),
    (T_FOREST,           'f'),
    (T_ANCIENT_FOREST,   'F'),
@@ -186,13 +186,15 @@ class MapGen(object):
       return cnt
       
    def seed(self,prob,terr,mask=lambda x,y,t: is_land(t)):
+      count = 0
       for x,y,t in self.itermap():
          if mask and not mask(x,y,t): continue
          if random.randrange(100) < prob:
-            if isinstance(terr,types.FunctionType):
-               self.map[x][y] = terr()
-            else:
-               self.map[x][y] = choose(terr)
+            nt = terr() if isinstance(terr,types.FunctionType) else choose(terr)
+            if nt != t:
+               self.map[x][y] = nt
+               count += 1
+      return count
    
    def mask_radius(self,radius):
        cx, cy = self.width/2.0, self.height/2.0
@@ -201,19 +203,28 @@ class MapGen(object):
    def mask_border(self,b):
       return lambda x,y,t: b<=x< self.width-b and b<=y<=self.height-b
 
-   def cellular_automata(self,steps,kernel,actions,seed=None,mask=None):
+   def cellular_automata(self,steps,kernel,actions,
+                         seed=None,mask=None,name=None):
       if steps == 0: return
-      if seed: self.seed(seed[0],seed[1],mask)
+      if options.debug and name: print 'Cellular Automata', name
+      if seed: 
+         self.seed(seed[0],seed[1],mask)
+         if options.debug:
+            print 'Seed'
+            print self
       for step in range(steps):
          nmap = eval(repr(self.map))
          for x,y,t in self.itermap():
             if mask and not mask(x,y,t): continue
             val = sum(map(lambda a: a[2]*self.R(x,y,a[0],a[1]),kernel))
-            for action in actions:
-               if val >= action[0]:
-                  nmap[x][y] = choose(action[1])
+            for r, terrain in actions:
+               if val >= r:
+                  nmap[x][y] = choose(terrain)
                   break
          self.map = nmap
+         if options.debug:
+            print 'Step',step+1
+            print self
 
    def flood_fill(self,x,y,target,replace):
       queue = [(x,y)]
@@ -224,31 +235,46 @@ class MapGen(object):
             queue.extend([(x+i,y+j) for i,j in [(-1,0),(0,1),(1,0),(0,-1)]
                           if self.in_range(x+i,y+j)])
          
-         
+   def is_contiguous(self,terr):
+      T_PLACEHOLDER = -1
+      for x,y,t in self.itermap():
+         if test_terrain(t,terr):
+            self.flood_fill(x,y,terr,T_PLACEHOLDER)
+            break
+      ret = 0 == [t for _,_,t in self.itermap()].count(terr)
+      self.seed(100,terr,lambda x,y,t: t == T_PLACEHOLDER)
+      return ret
+
+
    def shape_land(self,prob,border,repeat=1,r=5):
       it = 0
-      while it < 100:
+      while True:
          it += 1
          if options.verbose:
             print "Shaping land iteration", it
          self.initmap()
-         self.cellular_automata( **{
-            'seed': (prob,T_PLAIN),
-            'mask': self.mask_border(border),
-            'steps': repeat,
-            'kernel': [(T_SEA,1,1)],
-            'actions': [(r,T_SEA),
-                        (0,T_PLAIN)]
-            })
+         self.cellular_automata( 
+            name = 'Land',
+            seed = (prob,T_PLAIN),
+            mask = self.mask_border(border),
+            steps = repeat,
+            kernel = [(T_SEA,1,1)],
+            actions = [(r,T_SEA), (0,T_PLAIN)]
+            )
 
          # ensure all land contiguous
-         for x,y,t in self.itermap():
-            if test_terrain(t,T_PLAIN):
-               self.flood_fill(x,y,T_PLAIN,T_MOUNTAIN)
-               break
-         if [t for _,_,t in self.itermap()].count(T_PLAIN) == 0:
-            self.clear_land()
-            break
+         if not (options.big_islands or self.is_contiguous(T_PLAIN)):
+            continue
+
+         # ensure no inland seas
+         if not options.inland_seas:
+            for x,y,t in self.itermap():
+               if test_terrain(t,T_SEA):
+                  self.flood_fill(x,y,T_SEA,-1)
+                  break
+            self.seed(100,T_PLAIN,lambda x,y,t: t == T_SEA)
+            self.seed(100,T_SEA,lambda x,y,t: t == -1)
+         break
 
    def clear_land(self,mask=None):
       if mask is None:
@@ -265,8 +291,8 @@ class MapGen(object):
          'kernel': [(TA_HILLS,1,1),
                     (T_MOUNTAIN,1,1),
                     (T_HIGH_MOUNTAIN,1,2)],
-         'actions': [(7,{T_MOUNTAIN:3,T_HIGH_MOUNTAIN:1}),
-                     (4,TA_HILLS),
+         'actions': [(options.highmountr,{T_MOUNTAIN:3,T_HIGH_MOUNTAIN:1}),
+                     (options.hillr,TA_HILLS),
                      (0,T_PLAIN)]
          })
       self.seed(5,TA_HILLS,lambda x,y,t: t == T_PLAIN)
@@ -287,12 +313,15 @@ class MapGen(object):
 
    def basic_terrain(self):
       self.cellular_automata( 
+            name = 'Mountains',
             steps = options.hillsteps,
             mask = lambda x,y,t: is_land(t),
             seed = (options.hillprob,T_MOUNTAIN),
-            kernel = [(T_MOUNTAIN,1,1)],
-            actions = [(options.hillr,T_MOUNTAIN), (0,T_PLAIN)] )
+            kernel = [(TA_MOUNTAINS,1,1)],
+            actions = [(options.highmountr,T_HIGH_MOUNTAIN),
+                       (options.hillr,T_MOUNTAIN), (0,T_PLAIN)] )
       self.cellular_automata(
+            name = 'Forests',
             steps = options.treesteps,
             mask = lambda x,y,t: t in [T_PLAIN,T_FOREST],
             seed = (options.treeprob,T_FOREST),
@@ -448,18 +477,22 @@ default_options = {
    'version':'0.2',
    'verbose':True, 
    'basic':False,
+   'debug':False,
    'mode':'GEN',
    'mapwidth':50,
    'mapheight':36,
    'filename':'map.coem',
    'border':2,
+   'big_islands':True,
+   'inland_seas':True,
    'landprob':55,
    'landsteps':5,
    'landr':5,
    'coast':True,
-   'hillsteps':1,
+   'hillsteps':2,
    'hillprob':33,
    'hillr':4,
+   'highmountr':8,
    'treesteps':1,
    'treeprob':38,
    'treer':4,
@@ -517,6 +550,8 @@ Default values for options given in parentheses.'''
    parser = OptionParser(description=description, version=options.version)
    parser.set_defaults(**default_options)
    parser.add_option("-q","--quiet",action="store_false",dest="verbose")
+   parser.add_option("--debug",action="store_true",dest="debug",
+         help="Really verbose output")
    parser.add_option("-x","--mapw", type="int", dest="mapwidth",  
                         metavar="WIDTH", help="Map width in squares (50)")
    parser.add_option("-y","--maph", type="int", dest="mapheight",  
@@ -545,6 +580,8 @@ Default values for options given in parentheses.'''
                         help="Number of generations to shape hills (3)")
    group.add_option("--hill-prob", type="int",dest="hillprob", metavar="PROB",
                         help="Probability for seeding hills/mtn on land (38)")
+   group.add_option("--high-mount-r",type="int",dest="highmountr",
+                        help="R value for high mountain (9)")
    group.add_option("--tree-steps", type="int", dest="treesteps", 
                         metavar="STEPS",
                         help="Number of generations to shape forests (2)")
@@ -566,6 +603,8 @@ Default values for options given in parentheses.'''
                help="Radius from center of map to seed random rare tiles. (20)")
    group.add_option("--basic",action="store_true",dest="basic",
                help="Add mountains and forests, and set addfancyterrain in map")
+   group.add_option("--no-inland-seas",action="store_false",dest="inland_seas")
+   group.add_option("--big-islands",action="store_true",dest="big_islands")
 
 
    parser.add_option_group(group)

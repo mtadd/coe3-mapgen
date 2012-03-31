@@ -305,6 +305,7 @@ def trialgen(num, mapdir, rungame):
     
    mapname = 'trial{0}'.format(num)
    mapgen.options.filename = os.path.join(mapdir, '{0}.coem'.format(mapname)) 
+   mapgen.options.debug = options.debug
    map_url = trial.get('options',{}).get('map url',None)
    if not map_url:
       mapdim = MAP_DIMS[trial['map_size']]
@@ -371,9 +372,10 @@ def trialgen(num, mapdir, rungame):
 
 default_options = {
    'version': '0.1',
+   'debug': False,
    'mapdir': './coe3.app/Contents/Resources/maps',
    'rungame': False,
-   'mapgen': True
+   'mapgen': True,
    }
 options = Values(default_options) 
 
@@ -397,6 +399,8 @@ Default values for options given in parentheses.'''
    global options
    parser = OptionParser(description=description, version=options.version)
    parser.set_defaults(**default_options)
+   parser.add_option("--debug",action="store_true",dest="debug",
+         help="Really verbose output")
    parser.add_option("-d","--mapdir",dest="mapdir", help="Game map directory")
    parser.add_option("-r","--rungame",action="store_true",dest="rungame",
          help="Run game with the selected trial")

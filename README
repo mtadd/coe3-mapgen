@@ -8,6 +8,7 @@ for options given in parentheses.
 Options:
   --version             show program's version number and exit
   -h, --help            show this help message and exit
+  --debug               Really verbose output
   -d MAPDIR, --mapdir=MAPDIR
                         Game map directory
   -r, --rungame         Run game with the selected trial
@@ -25,6 +26,7 @@ Options:
   --version             show program's version number and exit
   -h, --help            show this help message and exit
   -q, --quiet           
+  --debug               Really verbose output
   -x WIDTH, --mapw=WIDTH
                         Map width in squares (50)
   -y HEIGHT, --maph=HEIGHT
@@ -41,6 +43,8 @@ Options:
     --no-coast          
     --hill-steps=STEPS  Number of generations to shape hills (3)
     --hill-prob=PROB    Probability for seeding hills/mtn on land (38)
+    --high-mount-r=HIGHMOUNTR
+                        R value for high mountain (9)
     --tree-steps=STEPS  Number of generations to shape forests (2)
     --tree-prob=PROB    Probability for seeding forests on land (50)
     --resource-prob=PROB
@@ -53,3 +57,5 @@ Options:
                         (20)
     --basic             Add mountains and forests, and set addfancyterrain in
                         map
+    --no-inland-seas    
+    --big-islands       
