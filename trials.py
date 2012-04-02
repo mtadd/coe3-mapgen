@@ -82,27 +82,6 @@ MAP_DIMS = [ (30, 20), (40, 28), (50, 36), (60, 44), (70, 52) ]
 
 CLASS_ANY = [i for i,v in CLASS if i > 0] 
 
-def choose(c,sets):
-   if isinstance(c,str) and sets.has_key(c):
-      s = sets[c]
-      v = mapgen.choose(s)
-      s.remove(v)
-      return v
-   return mapgen.choose(c)
-
-def pick_players(classes, levels, teams=None,sets=None):
-   '''
-   Returns an array of tuple (class, ai-level (0=human), team)
-   '''
-   if teams is None: teams = range(1,1+len(classes))
-   if sets is None: sets = {}
-   players = range(1,1+len(classes))
-   sets = dict(sets) #shallow copy
-   return [(i,choose(c,sets), choose(l,sets), t) 
-           for i, c, l, t in zip(players, classes, levels, teams)]
-
-
-
    
 TRIALS = [ {
 'title':"You're Just a Commoner",
@@ -112,6 +91,14 @@ TRIALS = [ {
 'map_size': MAPSIZE.LARGE,
 'society': SOCIETY.Random
    }, {
+'title':"Three Years' War",
+'desc':"""Better hurry, three years isn't much time.
+Defeat one Count-level AI on a small map in less than 35 turns.""",
+'classes': [ [CLASS.TrollKing,CLASS.Witch,CLASS.Necromancer], [CLASS_ANY] ],
+'levels': [AI.HUMAN, AI.COUNT],
+'map_size': MAPSIZE.SMALL,
+'society': SOCIETY.Random
+   },{
 'title':"A Little Disagreement",
 'desc':"Small people, huge wars.  Defeat one Count-level AI on a small map.",
 'sets': {'A':[CLASS.HOBURG, CLASS.DWARF_QUEEN]},
@@ -200,7 +187,7 @@ Defeat 3 allied Knight-level AI on a huge map with the society set to Empire.'''
 'society': SOCIETY.Empire,  
 'options': {'Common cause': True, 'Cluster start': False}
 }, {
-'title':'Sorcerer in the Middle',
+'title':'Sorceror in the Middle',
 'desc':'''Put a stop to all the commotion outside so you can go back to your mountain and go to sleep.
 Defeat all Marquis-level AI, which consists of two AI teams, on a huge map with society set to Monarchy.''',
 'sets': { 'A': [CLASS.Baron, CLASS.Senator, CLASS.Barbarian, CLASS.TrollKing],
@@ -211,6 +198,17 @@ Defeat all Marquis-level AI, which consists of two AI teams, on a huge map with 
 'map_size': MAPSIZE.Huge,
 'society': SOCIETY.Monarchy,
 'options': {'Common cause': True, 'Cluster start': True}
+}, {
+'title':'Something Nasty is Brewing',
+'desc':'''"All that the witch-finder doth is to fleece the country of their money, and therefore rides and goes to townes to have imployment, and promiseth them faire promises, and it may be doth nothing for it, and possesseth many men that they have so many wizzards and so many witches in their towne, and so hartens them on to entertaine him." -The Discovery of Witches by Matthew Hopkins
+Defeat five allied Jester-level AI on a large map during the Monarchy without your ally being defeated. Since the witch hunt was just proclaimed, you will need to rush to your ally's aid.''',
+'classes': [CLASS.Witch,CLASS.Witch,CLASS.DwarfQueen,CLASS.Hoburg,
+            CLASS.Senator,CLASS.Druid,CLASS.Warlock],
+'levels': [AI.Human]+6*[AI.Jester],
+'teams': [1,1]+5*[2],
+'options': {'Common cause': False, 'Cluster start': False},
+'map_size': MAPSIZE.Large,
+'society': SOCIETY.Monarchy
 }, {
 'title':'Bring Out Your Dead',
 'desc':'''So many dealings with the mindless is sure to drive you insane.
@@ -300,6 +298,25 @@ Defeat 7 allied Jester-level AI on an enormous map using any class.""",
 'options': {'Common cause': True, 'Cluster start': False }
 }
 ]
+
+def choose(c,sets):
+   if isinstance(c,str) and sets.has_key(c):
+      s = sets[c]
+      v = mapgen.choose(s)
+      s.remove(v)
+      return v
+   return mapgen.choose(c)
+
+def pick_players(classes, levels, teams=None,sets=None):
+   '''
+   Returns an array of tuple (class, ai-level (0=human), team)
+   '''
+   if teams is None: teams = range(1,1+len(classes))
+   if sets is None: sets = {}
+   players = range(1,1+len(classes))
+   sets = dict(sets) #shallow copy
+   return [(i,choose(c,sets), choose(l,sets), t) 
+           for i, c, l, t in zip(players, classes, levels, teams)]
 
 def trialgen(num, mapdir, rungame):
    idx = num-1

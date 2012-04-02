@@ -9,6 +9,13 @@ import copy
 #legacy support
 if sys.version_info < (2,6):
    import re
+   
+   def format(fmt, *args):
+      return re.sub("{.+?}","%s",fmt) % tuple(map(str,args))
+else:
+   def format(fmt, *args):
+      return fmt.format(*args)
+
 
 if sys.version_info < (2,5):
    def any(iterable):
@@ -202,13 +209,6 @@ def print_djikstra_map(m,wall):
       return '*'
 
    print '\n'.join(map(lambda n: ''.join(map(func,n)),transposed))
-
-def format(fmt, *args):
-   if sys.version_info < (2,6):
-      return re.sub("{.+?}","%s",fmt) % tuple(map(str,args))
-   else:
-      return fmt.format(*args)
-
 
 class MapGen(object):
    def __init__(self,width,height):
