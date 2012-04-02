@@ -94,7 +94,7 @@ TRIALS = [ {
 'title':"Three Years' War",
 'desc':"""Better hurry, three years isn't much time.
 Defeat one Count-level AI on a small map in less than 35 turns.""",
-'classes': [ [CLASS.TrollKing,CLASS.Witch,CLASS.Necromancer], [CLASS_ANY] ],
+'classes': [ [CLASS.TrollKing,CLASS.Witch,CLASS.Necromancer], CLASS_ANY ],
 'levels': [AI.HUMAN, AI.COUNT],
 'map_size': MAPSIZE.SMALL,
 'society': SOCIETY.Random
@@ -365,6 +365,7 @@ def trialgen(num, mapdir, rungame):
       output.append('Player\tTeam\tAI\tClass')
       players = pick_players(trial['classes'],trial['levels'],
                          trial.get('teams',None),trial.get('sets',None))
+      print players
       for i, c, l, t in players:         
          output.append( format("{0}\t{1}\t{2}\t{3}", i,t,AI[l],CLASS[c]))
          if mapfile:
