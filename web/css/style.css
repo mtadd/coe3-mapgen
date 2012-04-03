@@ -1,0 +1,14 @@
+body {
+   background-color: black;
+   color: white;
+   font-family: Verdana, Arial;
+   padding: 50px;
+}
+
+a { color: white; }
+a:visited { color: rgb(192,0,0) }
+a:hover { color: rgb(235,0,0) }
+
+th { padding: 3px 17px; font-size: larger; color: rgb(255,200,100) }
+td { padding: 3px 17px; text-align: center; 
+     border-top: 1px solid red; }

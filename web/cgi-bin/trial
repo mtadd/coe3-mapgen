@@ -1,0 +1,54 @@
+#!/usr/bin/env python
+from constants import MAPGEN_PATH
+import cgitb
+cgitb.enable()
+import cgi
+import sys
+sys.stderr = sys.stdout
+sys.path.insert(0,MAPGEN_PATH)
+import trials
+from mapgen import format, CLASS, AI, SOCIETY, MAPSIZE, MAP_DIMS
+
+form = cgi.FieldStorage()
+
+try:
+   trial = trials.TRIALS[int(form["t"].value)-1]
+except:
+   print 'Location: trials'
+   print
+
+print 'Content-type: text/html'
+print
+print '<html><head>'
+print '<title>Conquest of Elysium 3 - Trial By Fire -', trial['title'],
+print '''</title> 
+      <link rel="stylesheet" type="text/css" href="../css/style.css" />
+      </head>
+      <body>'''
+print '<a href="trials">List of Trials</a>'
+print '<h1>',trial['title'],'</h1>'
+print '<p>',trial['desc'],'</p>'
+    
+print '<ul>'
+map_url = trial.get('options',{}).get('map url',None)
+if map_url:
+   print '<li> <a href="',map_url,'">Map URL</a></li>'
+else:
+   mapdim = MAP_DIMS[trial['map_size']]
+   print '<li>',format("Map Size: {0} ({1}x{2})",
+         MAPSIZE[trial['map_size']],mapdim[0], mapdim[1]),'</li>'
+   print '<li>',format("Society: {0} ({1})",SOCIETY[trial["society"]], 
+               trial['society']),'</li>'
+   for k,v in trial.get('options',{}).iteritems():
+      print '<li>',format("{0}: {1}",k,v),'</li>'
+print '</ul>'
+print '<table><tr><th>Player</th><th>Team</th><th>AI</th><th>Class</th></tr>'
+
+players = trials.pick_players(trial['classes'],trial['levels'],
+                   trial.get('teams',None),trial.get('sets',None))
+for i, c, l, t in players:         
+   print format("<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>", 
+               i,t,AI[l],CLASS[c])
+print '</table>' 
+
+print '</body></html>'
