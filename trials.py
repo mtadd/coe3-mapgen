@@ -4,84 +4,8 @@ import os
 import os.path
 from optparse import Values
 import mapgen
-
 from mapgen import format
-
-class Enum(object): 
-   def __init__(self, tuples):
-      if isinstance(tuples,list) and isinstance(tuples[0],str):
-         tuples = zip(range(len(tuples)),tuples)
-      self.strs = dict(tuples)
-      for val, name in tuples:
-         setattr(self,name.upper().replace(" ","_"), val)
-         setattr(self,name.replace(" ",""), val)
-
-   def __getitem__(self,key):
-      try:
-         if isinstance(key,int): return self.strs[key]
-         else: raise ValueError()
-      except KeyError: 
-         raise ValueError()
-
-   def __iter__(self):
-      return self.strs.iteritems()
-
-   def __repr__(self):
-      return format("Enum({0})",list(self))
-
-
-
-CLASS = Enum([
-   (-1, "Player Choice"),
-   (1, "Baron"),
-   (2, "Necromancer"),
-   (3, "Demonologist"),
-   (4, "Witch"),
-   (5, "Priestess"),
-   (6, "Bakemono"),
-   (7, "Barbarian"),
-   (8, "Senator"),
-   (9, "Pale One"),
-   (10, "Druid"),
-   (11, "Hoburg"),
-   (12, "Warlock"),
-   (13, "Priest King"),
-   (14, "Troll King"),
-   (15, "Enchanter"),
-   (19, "High Cultist"),
-   (20, "Dwarf Queen")
-   ])
-
-AI = Enum([ 
-   (0, "Human"),
-   (1, "Piss Boy"), # -25%
-   (2, "Jester"),   # 0%
-   (3, "Butler"),   # 25%
-   (4, "Knight"),   # 50%
-   (5, "Baron"),    # 75%
-   (6, "Count"),    # 100%
-   (7, "Marquis"),  # 150%
-   (8, "Duke"),     # 200%
-   (9, "King"),     # 300%
-   (10, "Emperor")  # 500%   
- ])
-
-SOCIETY = Enum([
-   (0, "Random"),
-   (1, "Dark Ages"),
-   (2, "Agricultural"),
-   (3, "Empire"),
-   (4, "Fallen Empire"),
-   (5, "Monarchy"),
-   (6, "Dawn of a New Empire")
- ])
-
-MAPSIZE = Enum(["Tiny", "Small", "Large", "Huge", "Enormous"])
-   
-MAP_DIMS = [ (30, 20), (40, 28), (50, 36), (60, 44), (70, 52) ]
-
-CLASS_ANY = [i for i,v in CLASS if i > 0] 
-
+from mapgen import Enum, CLASS, AI, SOCIETY, MAPSIZE, MAP_DIMS, CLASS_ANY
    
 TRIALS = [ {
 'title':"You're Just a Commoner",
@@ -285,7 +209,7 @@ Defeat 5 allied classes on a large map with the society set to agricultural.""",
 'map_size': MAPSIZE.Large,
 'society': SOCIETY.Agricultural,
 'options': {'Common cause': False, 'Cluster start': True}
-}, {
+} , {
 'title':'One Against the World',
 'desc':""" Ever feel like the whole world is out to get you?
 Defeat 7 allied Jester-level AI on an enormous map using any class.""",
@@ -365,7 +289,6 @@ def trialgen(num, mapdir, rungame):
       output.append('Player\tTeam\tAI\tClass')
       players = pick_players(trial['classes'],trial['levels'],
                          trial.get('teams',None),trial.get('sets',None))
-      print players
       for i, c, l, t in players:         
          output.append( format("{0}\t{1}\t{2}\t{3}", i,t,AI[l],CLASS[c]))
          if mapfile:
@@ -395,20 +318,21 @@ default_options = {
    'mapdir': './coe3.app/Contents/Resources/maps',
    'rungame': False,
    'mapgen': True,
+   'list_trials': False
    }
 options = Values(default_options) 
 
 def print_columns(ncols, keyL):
-   maxlen = str(max(map(len,keyL)))
-   fmt = "  %2d) %-" + maxlen + "s"
    rows = len(keyL) // ncols
-   j = 0
-   while j < len(keyL):
-      for i in range(ncols):
-         if j+i < len(keyL):
-            print fmt % (1+j+i, keyL[j+i]),
+   if len(keyL) % ncols: rows += 1
+   fmts = [ "%2d) %-" + str(max([ len(keyL[j]) 
+               for j in range(i*rows,(i+1)*rows) if j < len(keyL)])) +"s "
+               for i in range(ncols) ]
+   for cols in zip(*[range(i*rows,(i+1)*rows) for i in range(ncols)]):
+      for i, k in enumerate(cols):
+         if k < len(keyL) :
+            print fmts[i]  % (1+k, keyL[k]),
       print ""       
-      j += ncols 
 
 def trials_main():
    from optparse import OptionParser, OptionGroup
@@ -424,9 +348,15 @@ Default values for options given in parentheses.'''
    parser.add_option("-r","--rungame",action="store_true",dest="rungame",
          help="Run game with the selected trial")
    parser.add_option("--nomap",action="store_false",dest="mapgen",
-         help="Just show trial description")
+         help="Just show selected trial description")
+   parser.add_option("--list",action="store_true",dest="list_trials",
+         help="List trials titles")
 
    (options, args) = parser.parse_args()
+
+   if options.list_trials:
+      print_columns(2, [t['title'] for t in TRIALS])
+      return
 
    arg = None
    if len(args) > 0:

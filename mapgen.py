@@ -28,6 +28,79 @@ if sys.version_info < (2,5):
          if not i: return False
       return True
 
+class Enum(object): 
+   def __init__(self, tuples):
+      if isinstance(tuples,list) and isinstance(tuples[0],str):
+         tuples = zip(range(len(tuples)),tuples)
+      self.strs = dict(tuples)
+      for val, name in tuples:
+         setattr(self,name.upper().replace(" ","_"), val)
+         setattr(self,name.replace(" ",""), val)
+
+   def __getitem__(self,key):
+      try:
+         if isinstance(key,int): return self.strs[key]
+         else: raise ValueError()
+      except KeyError: 
+         raise ValueError()
+
+   def __iter__(self):
+      return self.strs.iteritems()
+
+   def __repr__(self):
+      return format("Enum({0})",list(self))
+
+CLASS = Enum([
+   (-1, "Player Choice"),
+   (1, "Baron"),
+   (2, "Necromancer"),
+   (3, "Demonologist"),
+   (4, "Witch"),
+   (5, "Priestess"),
+   (6, "Bakemono"),
+   (7, "Barbarian"),
+   (8, "Senator"),
+   (9, "Pale One"),
+   (10, "Druid"),
+   (11, "Hoburg"),
+   (12, "Warlock"),
+   (13, "Priest King"),
+   (14, "Troll King"),
+   (15, "Enchanter"),
+   (19, "High Cultist"),
+   (20, "Dwarf Queen")
+   ])
+
+AI = Enum([ 
+   (0, "Human"),
+   (1, "Piss Boy"), # -25%
+   (2, "Jester"),   # 0%
+   (3, "Butler"),   # 25%
+   (4, "Knight"),   # 50%
+   (5, "Baron"),    # 75%
+   (6, "Count"),    # 100%
+   (7, "Marquis"),  # 150%
+   (8, "Duke"),     # 200%
+   (9, "King"),     # 300%
+   (10, "Emperor")  # 500%   
+ ])
+
+SOCIETY = Enum([
+   (0, "Random"),
+   (1, "Dark Ages"),
+   (2, "Agricultural"),
+   (3, "Empire"),
+   (4, "Fallen Empire"),
+   (5, "Monarchy"),
+   (6, "Dawn of a New Empire")
+ ])
+
+MAPSIZE = Enum(["Tiny", "Small", "Large", "Huge", "Enormous"])
+   
+MAP_DIMS = [ (30, 20), (40, 28), (50, 36), (60, 44), (70, 52) ]
+
+CLASS_ANY = [i for i,v in CLASS if i > 0] 
+
 T_PLAIN = 0
 T_SEA = 69
 T_COAST = 65 
