@@ -208,7 +208,7 @@ Defeat 5 allied classes on a large map with the society set to agricultural.""",
 'teams': [1] + 5*[2],
 'map_size': MAPSIZE.Large,
 'society': SOCIETY.Agricultural,
-'options': {'Common cause': False, 'Cluster start': True}
+'options': {'Common cause': False, 'Cluster start': False}
 } , {
 'title':'One Against the World',
 'desc':""" Ever feel like the whole world is out to get you?
