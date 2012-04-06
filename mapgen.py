@@ -63,7 +63,7 @@ CLASS = Enum([
    (8, "Senator"),
    (9, "Pale One"),
    (10, "Druid"),
-   (11, "Hoburg"),
+   (11, "Burgmeister"),
    (12, "Warlock"),
    (13, "Priest King"),
    (14, "Troll King"),
