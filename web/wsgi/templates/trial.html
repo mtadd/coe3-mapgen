@@ -1,0 +1,29 @@
+<html><head>
+<title>Conquest of Elysium 3 - Trial By Fire - {{ trial.title }}</title> 
+<link rel="stylesheet" type="text/css" href="/static/css/style.css" />
+</head>
+<body>
+<a href="/trials">List of Trials</a>
+<h1>{{ trial.title }}</h1>
+<p>{{ trial.desc }}</p>
+    
+<ul>
+{% if trial.options is defined and trial.options['map url'] %}
+   <li><a href="{{ trial.options['map url'] }}">Map URL</a></li>
+{% else %}
+   <li>Map Size: {{ MAPSIZE[trial.map_size] }} </li>
+   <li>Society: {{ SOCIETY[trial.society] }} </li>
+   {% if trial.options is defined %}
+      {% for k in trial.options %}
+         <li>{{ k }}: {{ trial.options[k] }}</li>
+      {% endfor %}
+   {% endif %}
+{% endif %}
+</ul>
+
+<table><tr><th>Player</th><th>Team</th><th>AI</th><th>Class</th></tr>
+{% for p in players %}
+<tr><td>{{ p[0] }}</td><td>{{ p[3] }}</td><td>{{ AI[p[2]] }}</td><td>{{ CLASS[p[1]] }}</td></tr>
+{% endfor %}
+</table> 
+</body></html>

@@ -5,10 +5,11 @@ body {
    padding: 50px;
 }
 
-a { color: white; }
+a { color: rgb(255,0,0); }
 a:visited { color: rgb(192,0,0) }
 a:hover { color: rgb(235,0,0) }
 
+h1 { color: rgb(255,180,50) }
 th { padding: 3px 17px; font-size: larger; color: rgb(255,200,100) }
 td { padding: 3px 17px; text-align: center; 
      border-top: 1px solid red; }

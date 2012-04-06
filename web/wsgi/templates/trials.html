@@ -1,0 +1,11 @@
+<html><head>
+<title>Conquest of Elysium 3 - Trial By Fire</title> 
+<link rel="stylesheet" type="text/css" href="/static/css/style.css" />
+</head><body>
+<h1>Trial by Fire</h1>
+<ol>
+{% for trial in trials %}
+   <li><a href="/trial/{{ loop.index }}">{{ trial.title }}</a></li>
+{% endfor %}
+</ol>
+</body></html>

@@ -52,6 +52,7 @@ class Enum(object):
 
 CLASS = Enum([
    (-1, "Player Choice"),
+   (0, "Random"),
    (1, "Baron"),
    (2, "Necromancer"),
    (3, "Demonologist"),

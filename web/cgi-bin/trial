@@ -14,7 +14,7 @@ form = cgi.FieldStorage()
 try:
    trial = trials.TRIALS[int(form["t"].value)-1]
 except:
-   print 'Location: trials'
+   print 'Location: trials.cgi'
    print
 
 print 'Content-type: text/html'
@@ -25,7 +25,7 @@ print '''</title>
       <link rel="stylesheet" type="text/css" href="../css/style.css" />
       </head>
       <body>'''
-print '<a href="trials">List of Trials</a>'
+print '<a href="/">Home</a>&nbsp;&lt;&nbsp;<a href="trials.cgi">List of Trials</a>'
 print '<h1>',trial['title'],'</h1>'
 print '<p>',trial['desc'],'</p>'
     

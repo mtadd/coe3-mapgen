@@ -13,11 +13,12 @@ print '''<html><head>
 <title>Conquest of Elysium 3 - Trial By Fire</title> 
 <link rel="stylesheet" type="text/css" href="../css/style.css" />
 </head><body>
+<a href="/">Home</a>
 <h1>Trial by Fire</h1>
 <ol>
 '''
 for i,trial in enumerate(trials.TRIALS):
-   print format('<li><a href="trial?t={0}">{1}</a></li>', i+1, trial['title'])
+   print format('<li><a href="trial.cgi?t={0}">{1}</a></li>', i+1, trial['title'])
 
 print '''</ol>
 </body></html>'''
