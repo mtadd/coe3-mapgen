@@ -1,0 +1,12 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html><head>
+      <title>Conquest of Elysium 3 - {% block title %}{% endblock %}</title> 
+<link rel="stylesheet" type="text/css" href="/static/css/style.css" />
+</head><body>
+{% block nav %}{% endblock %}
+<h1>{{ self.title() }}</h1>
+{% if error %}
+<div id="error">{{ error }}</div>
+{% endif %}
+{% block body %}{% endblock %}
+</body></html>

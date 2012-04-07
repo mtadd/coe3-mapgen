@@ -57,7 +57,7 @@ CLASS = Enum([
    (2, "Necromancer"),
    (3, "Demonologist"),
    (4, "Witch"),
-   (5, "Priestess"),
+   (5, "High Priestess"),
    (6, "Bakemono"),
    (7, "Barbarian"),
    (8, "Senator"),

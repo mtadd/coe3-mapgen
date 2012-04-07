@@ -1,10 +1,7 @@
-<html><head>
-<title>Conquest of Elysium 3 - Trial By Fire - {{ trial.title }}</title> 
-<link rel="stylesheet" type="text/css" href="/static/css/style.css" />
-</head>
-<body>
-<a href="/trials">List of Trials</a>
-<h1>{{ trial.title }}</h1>
+{% extends "base.html" %}
+{% block title %}{{ trial.title }}{% endblock %}
+{% block nav %}<a href="/trials">List of Trials</a>{% endblock %}
+{% block body %}
 <p>{{ trial.desc }}</p>
     
 <ul>
@@ -26,4 +23,4 @@
 <tr><td>{{ p[0] }}</td><td>{{ p[3] }}</td><td>{{ AI[p[2]] }}</td><td>{{ CLASS[p[1]] }}</td></tr>
 {% endfor %}
 </table> 
-</body></html>
+{% endblock %}

@@ -54,7 +54,7 @@ Ally yourself with 3 Jester level AI against 4 allied Knight-level AI on a huge 
                CLASS.Burgmeister, CLASS.Warlock, CLASS.Enchanter, 
                CLASS.DwarfQueen],
          'B': [CLASS.Necromancer, CLASS.Demonologist, CLASS.Witch,
-               CLASS.Priestess, CLASS.Bakemono, CLASS.PALE_ONE, 
+               CLASS.HighPriestess, CLASS.Bakemono, CLASS.PALE_ONE, 
                CLASS.PriestKing, CLASS.TrollKing, CLASS.HighCultist] },
 'classes': 4*'A'+4*'B',
 'levels': [0]+3*[AI.Jester]+4*[AI.Knight],
@@ -70,7 +70,7 @@ Ally yourself with 3 Jester level AI against 4 allied Baron-level AI on a huge m
                CLASS.Burgmeister, CLASS.Warlock, CLASS.Enchanter, 
                CLASS.DwarfQueen],
          'B': [CLASS.Necromancer, CLASS.Demonologist, CLASS.Witch,
-               CLASS.Priestess, CLASS.Bakemono, CLASS.PALE_ONE, 
+               CLASS.HighPriestess, CLASS.Bakemono, CLASS.PALE_ONE, 
                CLASS.PriestKing, CLASS.TrollKing, CLASS.HighCultist] },
 'classes': 'B'*4+4*'A',
 'teams': [1]*4+[2]*4,
@@ -115,7 +115,7 @@ Defeat 3 allied Knight-level AI on a huge map with the society set to Empire.'''
 'desc':'''Put a stop to all the commotion outside so you can go back to your mountain and go to sleep.
 Defeat all Marquis-level AI, which consists of two AI teams, on a huge map with society set to Monarchy.''',
 'sets': { 'A': [CLASS.Baron, CLASS.Senator, CLASS.Barbarian, CLASS.TrollKing],
-          'B': [CLASS.Witch, CLASS.Priestess, CLASS.PriestKing] },
+          'B': [CLASS.Witch, CLASS.HighPriestess, CLASS.PriestKing] },
 'classes': [ CLASS.Bakemono, 'A', 'A', 'A', 'A', 'B', 'B', 'B'],
 'levels': [0] + 7*[AI.Marquis],
 'teams': [1]+4*[2]+3*[3],
@@ -147,7 +147,7 @@ Defeat an alliance between a Jester-level Baron, a Butler-level Druid, and a Kni
 'title':'Save the Peons',
 'desc':''' Your serfs are apt to complain, but now that they have started disappearing regularly you've determined that maybe there is something to their bickering...
 Defeat five allied Butler-level AI on a large map.''',
-'sets': {'A': [CLASS.Demonologist, CLASS.Priestess, CLASS.Bakemono,
+'sets': {'A': [CLASS.Demonologist, CLASS.HighPriestess, CLASS.Bakemono,
                CLASS.PriestKing, CLASS.HighCultist] },
 'classes': [CLASS.Baron, 'A', 'A', 'A', 'A', 'A'],
 'levels': [0] + [AI.Butler]*5,
@@ -182,7 +182,7 @@ Have felt the worst of death's destroying wound
 And lie full low, graved in the hollow ground."
 - William Shakespeare's King Richard the Second
 Defeat four allied AI enemies (one Duke and three Counts) on a large map with a random society.''',
-'classes': [CLASS.Priestess, CLASS.Demonologist, CLASS.Bakemono, CLASS.PriestKing, CLASS.HighCultist],
+'classes': [CLASS.HighPriestess, CLASS.Demonologist, CLASS.Bakemono, CLASS.PriestKing, CLASS.HighCultist],
 'levels': [AI.Human, AI.Duke] + 3*[AI.Count],
 'options': { 'Common cause': True, 'Clustered start': False }, 
 'teams': [1]+4*[2],
