@@ -89,6 +89,16 @@ Defeat two allied Count-level AI on a huge map during the Dark Ages without losi
 'society': SOCIETY.DarkAges,
 'options': {'Common cause': True, 'Cluster start': False}
 }, {
+'title':'Squeezed In',
+'desc':"""Feel the pressure (taken from gp1628's game variations).
+Playing multiplayer, you and one human ally must beat two teams, each consisting of three Knight-level AI players. Both human players will receive a point for winning.""",
+'classes': [ CLASS_ANY, CLASS_ANY, CLASS.Necromancer, CLASS.Demonologist, CLASS.Witch, CLASS.HighPriestess, CLASS.PriestKing, CLASS.HighCultist],
+'levels': 2*[AI.Human]+6*[AI.Knight],
+'teams' : 2*[1]+3*[2]+3*[3],
+'map_size': MAPSIZE.Large,
+'society': SOCIETY.Monarchy,
+'options': {'Common cause': True, 'Cluster start': True }
+}, {
 'title':'Anti-Progress',
 'desc':"""We do not ride on the railroad; it rides upon us" - Henry David Thoreau
 Defeat 2 allied Knight-level AI on a large map with the society set as Dawn of a New Empire""",
@@ -275,8 +285,9 @@ def trialgen(num, mapdir, rungame):
             MAPSIZE[trial['map_size']],mapdim[0], mapdim[1]))
       output.append( format("Society: {0} ({1})",SOCIETY[trial["society"]], 
                   trial['society']))
+      optmap = {True: 'On', False: 'Off'}
       for k,v in trial.get('options',{}).iteritems():
-         output.append(format("{0}: {1}",k,v))
+         output.append(format("{0}: {1}",k,optmap[v]))
 
       if options.mapgen:
          mapfile = open(mapgen.options.filename,'a')

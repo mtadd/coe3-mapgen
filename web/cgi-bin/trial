@@ -39,8 +39,9 @@ else:
          MAPSIZE[trial['map_size']],mapdim[0], mapdim[1]),'</li>'
    print '<li>',format("Society: {0} ({1})",SOCIETY[trial["society"]], 
                trial['society']),'</li>'
+   optmap = {True: 'On', False: 'Off'}
    for k,v in trial.get('options',{}).iteritems():
-      print '<li>',format("{0}: {1}",k,v),'</li>'
+      print '<li>',format("{0}: {1}",k,optmap[v]),'</li>'
 print '</ul>'
 print '<table><tr><th>Player</th><th>Team</th><th>AI</th><th>Class</th></tr>'
 
