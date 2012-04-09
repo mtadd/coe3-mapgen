@@ -11,6 +11,17 @@ from mapgen import format, CLASS, AI, SOCIETY, MAPSIZE, MAP_DIMS
 
 form = cgi.FieldStorage()
 
+COLORS = [ (22,90,18), (90,27,18), (18,40,90), (90,88,18), 
+           (18,77,90), (90,18,86), (90,63,18), (49,18,90) ]
+
+def player_color(player):
+   color = COLORS[player-1]
+   return format('rgb({0},{1},{2})',*color)
+
+def player_block(player):
+   color = player_color(player)
+   return format('<div class="colorblock" style="outline-color: {0}; background-color: {1}" temp="{2}" ></div>',color,color,player)
+
 try:
    trial = trials.TRIALS[int(form["t"].value)-1]
 except:
@@ -43,13 +54,15 @@ else:
    for k,v in trial.get('options',{}).iteritems():
       print '<li>',format("{0}: {1}",k,optmap[v]),'</li>'
 print '</ul>'
-print '<table><tr><th>Player</th><th>Team</th><th>AI</th><th>Class</th></tr>'
+
+
+
+print '<table><tr><th>Player</th><th>Class</th><th>Controller /<br>Difficulty</th><th>Team</th></tr>'
 
 players = trials.pick_players(trial['classes'],trial['levels'],
                    trial.get('teams',None),trial.get('sets',None))
 for i, c, l, t in players:         
-   print format("<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>", 
-               i,t,AI[l],CLASS[c])
+   print format('<tr><td style="text-align: center">{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>', player_block(i), CLASS[c],AI[l],t)
 print '</table>' 
 
 print '</body></html>'
