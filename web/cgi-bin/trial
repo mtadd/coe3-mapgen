@@ -55,14 +55,12 @@ else:
       print '<li>',format("{0}: {1}",k,optmap[v]),'</li>'
 print '</ul>'
 
-
-
-print '<table><tr><th>Player</th><th>Class</th><th>Controller /<br>Difficulty</th><th>Team</th></tr>'
-
 players = trials.pick_players(trial['classes'],trial['levels'],
                    trial.get('teams',None),trial.get('sets',None))
-for i, c, l, t in players:         
-   print format('<tr><td style="text-align: center">{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>', player_block(i), CLASS[c],AI[l],t)
-print '</table>' 
+if len(players):
+   print '<table><tr><th>Player</th><th>Class</th><th>Controller /<br>Difficulty</th><th>Team</th></tr>'
+   for i, c, l, t in players:         
+      print format('<tr><td style="text-align: center">{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>', player_block(i), CLASS[c],AI[l],t)
+   print '</table>' 
 
 print '</body></html>'

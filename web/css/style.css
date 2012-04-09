@@ -10,6 +10,20 @@ a:visited { color: rgb(192,0,0) }
 a:hover { color: rgb(235,0,0) }
 
 h1 { color: rgb(255,180,50) }
-th { padding: 3px 17px; font-size: larger; color: rgb(255,200,100) }
-td { padding: 3px 17px; text-align: center; 
+th { padding: 3px 17px; font-size: larger; 
+     vertical-align: bottom; color: rgb(255,200,100) }
+td { padding: 3px 17px; text-align: left; 
      border-top: 1px solid red; }
+
+.colorblock { 
+   display: inline-block; 
+   width: 15px; height: 15px; 
+   outline-style: outset; 
+   outline-width: 1px;
+   border: 0px solid red;
+   text-align: center;
+   vertical-align: middle;
+   font-size: x-small;
+}
+
+

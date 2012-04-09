@@ -89,6 +89,18 @@ Defeat two allied Count-level AI on a huge map during the Dark Ages without losi
 'society': SOCIETY.DarkAges,
 'options': {'Common cause': True, 'Cluster start': False}
 }, {
+'title':'Running the Gauntlet',
+'desc':'''The CoE3-class sampler... with a serious catch (contributed by BandC).
+Play 17 games with each sequential class (start with Baron, then Necromancer, Demonologist, etc.) vs. 3 random Jester-level AI (not allied). If you lose a game, you have to start the challenge from the beginning. In other words, you must win the game with these settings for every single class without losing a single game.
+Player class: Play each class sequentially (but if you lose, you have to start from the beginning of the list)
+AI class: Three random non-allied classes
+AI level: Jester''',
+'map_size': MAPSIZE.Large,
+'society': SOCIETY.Random,
+'classes': [],
+'levels': [],
+'teams': []
+}, {
 'title':'Squeezed In',
 'desc':"""Feel the pressure (taken from gp1628's game variations).
 Playing multiplayer, you and one human ally must beat two teams, each consisting of three Knight-level AI players. Both human players will receive a point for winning.""",
@@ -296,10 +308,11 @@ def trialgen(num, mapdir, rungame):
            '^'.join(map(lambda s: s.replace("\n","^").replace('"',"'"),output)) 
             ))
 
-      output.append('')
-      output.append('Player\tTeam\tAI\tClass')
       players = pick_players(trial['classes'],trial['levels'],
                          trial.get('teams',None),trial.get('sets',None))
+      if len(players):
+         output.append('')
+         output.append('Player\tTeam\tAI\tClass')
       for i, c, l, t in players:         
          output.append( format("{0}\t{1}\t{2}\t{3}", i,t,AI[l],CLASS[c]))
          if mapfile:
