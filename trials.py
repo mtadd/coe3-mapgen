@@ -80,8 +80,9 @@ Ally yourself with 3 Jester level AI against 4 allied Baron-level AI on a huge m
 'options': {'Common cause': False, 'Cluster start': True}
 }, {
 'title':'Flawless Victory',
-'desc':"""May the lightning of your glory be seen and the thunders of your onset heard from east to west, and be ye the avengers of noble blood." - William of Normandy
-Defeat two allied Count-level AI on a huge map during the Dark Ages without losing a single commander.""",
+'quote':('''"May the lightning of your glory be seen and the thunders of your onset heard from east to west, and be ye the avengers of noble blood."''',
+         "William of Normandy"),
+'desc':"""Defeat two allied Count-level AI on a huge map during the Dark Ages without losing a single commander.""",
 'classes': [CLASS.Baron, CLASS.DwarfQueen, CLASS.Barbarian],
 'levels': [0, AI.Count, AI.Count],
 'teams': [1,2,2],
@@ -112,8 +113,9 @@ Playing multiplayer, you and one human ally must beat two teams, each consisting
 'options': {'Common cause': True, 'Cluster start': True }
 }, {
 'title':'Anti-Progress',
-'desc':"""We do not ride on the railroad; it rides upon us" - Henry David Thoreau
-Defeat 2 allied Knight-level AI on a large map with the society set as Dawn of a New Empire""",
+'quote': ('"We do not ride on the railroad; it rides upon us."',
+          "Henry David Thoreau"),
+'desc':"""Defeat 2 allied Knight-level AI on a large map with the society set as Dawn of a New Empire""",
 'classes': [ [CLASS.Necromancer, CLASS.Demonologist, CLASS.Druid, 
               CLASS.Bakemono, CLASS.HighCultist],
              CLASS.Baron, CLASS.Senator],
@@ -146,8 +148,8 @@ Defeat all Marquis-level AI, which consists of two AI teams, on a huge map with 
 'options': {'Common cause': True, 'Cluster start': True}
 }, {
 'title':'Something Nasty is Brewing',
-'desc':'''"All that the witch-finder doth is to fleece the country of their money, and therefore rides and goes to townes to have imployment, and promiseth them faire promises, and it may be doth nothing for it, and possesseth many men that they have so many wizzards and so many witches in their towne, and so hartens them on to entertaine him." -The Discovery of Witches by Matthew Hopkins
-Defeat five allied Jester-level AI on a large map during the Monarchy without your ally being defeated. Since the witch hunt was just proclaimed, you will need to rush to your ally's aid.''',
+'quote': ('''"All that the witch-finder doth is to fleece the country of their money, and therefore rides and goes to townes to have imployment, and promiseth them faire promises, and it may be doth nothing for it, and possesseth many men that they have so many wizzards and so many witches in their towne, and so hartens them on to entertaine him."''',"The Discovery of Witches by Matthew Hopkins"),
+'desc': '''Defeat five allied Jester-level AI on a large map during the Monarchy without your ally being defeated. Since the witch hunt was just proclaimed, you will need to rush to your ally's aid.''',
 'classes': [CLASS.Witch,CLASS.Witch,CLASS.DwarfQueen,CLASS.Burgmeister,
             CLASS.Senator,CLASS.Druid,CLASS.Warlock],
 'levels': [AI.Human]+6*[AI.Jester],
@@ -196,14 +198,14 @@ The scenario can be downloaded from this post.''',
 'society': SOCIETY.FallenEmpire
 }, {      
 'title':'Curses!',
-'desc':'''"Sweet love, I see, changing his property,
+'quote': ('''"Sweet love, I see, changing his property,
 Turns to the sourest and most deadly hate:
 Again uncurse their souls; their peace is made
 With heads, and not with hands; those whom you curse
 Have felt the worst of death's destroying wound
-And lie full low, graved in the hollow ground."
-- William Shakespeare's King Richard the Second
-Defeat four allied AI enemies (one Duke and three Counts) on a large map with a random society.''',
+And lie full low, graved in the hollow ground."''',
+         "William Shakespeare's King Richard the Second"),
+'desc': '''Defeat four allied AI enemies (one Duke and three Counts) on a large map with a random society.''',
 'classes': [CLASS.HighPriestess, CLASS.Demonologist, CLASS.Bakemono, CLASS.PriestKing, CLASS.HighCultist],
 'levels': [AI.Human, AI.Duke] + 3*[AI.Count],
 'options': { 'Common cause': True, 'Clustered start': False }, 
@@ -212,8 +214,8 @@ Defeat four allied AI enemies (one Duke and three Counts) on a large map with a 
 'society' : SOCIETY.Random,
 }, {
 'title':'Disposing of a Despot',
-'desc':"""The Goths were now, on every side, surrounded and pursued by the Roman arms. The flower of their troops had perished in the long siege of Philippopolis, and the exhausted country could no longer afford subsistence for the remaining multitude of licentious barbarians. Reduced to this extremity, the Goths would gladly have purchased, by the surrender of all their booty and prisoners, the permission of an undisturbed retreat. But the emperor, confident of victory, and resolving, by the chastisement of these invaders, to strike a salutary terror into the nations of the North, refused to listen to any terms of accommodation. The high-spirited barbarians preferred death to slavery." - Edward Gibbon's History of the Decline and Fall Of the Roman Empire
-Defeat an Emperor-level AI Senator during the Empire society on an enormous map.""",
+'quote': ('''"The Goths were now, on every side, surrounded and pursued by the Roman arms. The flower of their troops had perished in the long siege of Philippopolis, and the exhausted country could no longer afford subsistence for the remaining multitude of licentious barbarians. Reduced to this extremity, the Goths would gladly have purchased, by the surrender of all their booty and prisoners, the permission of an undisturbed retreat. But the emperor, confident of victory, and resolving, by the chastisement of these invaders, to strike a salutary terror into the nations of the North, refused to listen to any terms of accommodation. The high-spirited barbarians preferred death to slavery."''', "Edward Gibbon's History of the Decline and Fall Of the Roman Empire"),
+'desc': """Defeat an Emperor-level AI Senator during the Empire society on an enormous map.""",
 'classes': [CLASS.Barbarian, CLASS.Senator],
 'levels': [0, AI.Emperor],
 'map_size': MAPSIZE.Enormous,
@@ -289,6 +291,12 @@ def trialgen(num, mapdir, rungame):
 
    title = format("Trial By Fire {0}: {1}",num, trial["title"])
    output = ['',title, '-'*len(title)] 
+   if trial.has_key('quote'):
+      for line in trial['quote'][0].split('\n'):
+         output.append( line)
+      output.append('\t- ' + trial['quote'][1])
+      output.append('')
+
    output.extend(trial['desc'].split('\n'))
 
    mapfile = None
