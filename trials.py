@@ -69,7 +69,7 @@ Ally yourself with 3 Jester level AI against 4 allied Knight-level AI on a huge 
 'teams': [1]*4+[2]*4,
 'map_size': MAPSIZE.Large,
 'society': SOCIETY.FallenEmpire,
-'options': {'Common cause': False, 'Cluster start': True},
+'options': {'Common cause': True, 'Cluster start': True},
 'order': 4
 }, {
 'title':'The Legions of Doom',
@@ -214,7 +214,7 @@ The scenario can be downloaded from this post.''',
   },
 'classes': [CLASS.Demonologist]+7*['A'],
 'levels': [0]+7*['B'],
-'map_size': MAPSIZE.Huge,
+'map_size': MAPSIZE.Large,
 'society': SOCIETY.FallenEmpire,
 'order': 17
 }, {      
@@ -258,8 +258,8 @@ Defeat 5 allied classes on a large map with the society set to agricultural.""",
 'order': 20
 } , {
 'title':'One Against the World',
-'quote':""" Ever feel like the whole world is out to get you?""",
-'desc':'''Hold at least 5 enemy citadels for at least a year of the 7 allied Jester-level AI on a large map using any class.''',
+'desc':'''Ever feel like the whole world is out to get you?
+Hold at least 5 enemy citadels for at least a year of the 7 allied Jester-level AI on a large map using any class.''',
 'sets': { 'A': CLASS_ANY },
 'classes': [CLASS.PlayerChoice]+7*['A'],
 'levels': [0] + 7*[AI.Jester],
