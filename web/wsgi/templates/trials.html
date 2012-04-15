@@ -1,9 +1,12 @@
 {% extends "base.html" %}
 {% block title %}Trial by Fire{% endblock %}
+{% block nav %}
+<ul><li><a href="/">Home</a></li></ul>
+{% endblock %}
 {% block body %}
 <ol>
 {% for trial in trials %}
-   <li><a href="/trial/{{ loop.index }}">{{ trial.title }}</a></li>
+   <li><a href="trial.cgi?t={{ loop.index }}">{{ trial.title }}</a></li>
 {% endfor %}
 </ol>
 {% endblock %}

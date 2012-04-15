@@ -1,15 +1,23 @@
+
 body {
    background-color: black;
    color: white;
    font-family: Verdana, Arial;
-   padding: 50px;
+   margin: 0pt;
 }
 
-a { color: rgb(255,0,0); }
-a:visited { color: rgb(192,0,0) }
+a { outline: none; color: rgb(255,0,0); }
+a:visited {  color: rgb(192,0,0) }
 a:hover { color: rgb(235,0,0) }
 
-h1 { color: rgb(255,180,50) }
+header { margin: 0pt; padding: 20px 48px; }
+header>h1 { color: rgb(255,180,50); }
+nav { float: right; position: relative; top: -65px; }
+nav>ul>li { display: inline-block; }
+nav>ul>li>a { font-weight: bolder; padding: 30px 20px; }
+div#body { padding: 0px 75px; }
+div#error { padding: 10px 75px; }
+
 th { padding: 3px 17px; font-size: larger; 
      vertical-align: bottom; color: rgb(255,200,100) }
 td { padding: 3px 17px; text-align: left; 
@@ -20,10 +28,13 @@ td { padding: 3px 17px; text-align: left;
    width: 15px; height: 15px; 
    outline-style: outset; 
    outline-width: 1px;
-   border: 0px solid red;
    text-align: center;
    vertical-align: middle;
    font-size: x-small;
 }
+
+.author { margin-left: 30px; font-style: normal }
+
+blockquote { font-style: italic }
 
 

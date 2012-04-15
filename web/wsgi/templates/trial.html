@@ -1,8 +1,18 @@
 {% extends "base.html" %}
 {% block title %}{{ trial.title }}{% endblock %}
-{% block nav %}<a href="/trials">List of Trials</a>{% endblock %}
+{% block nav %}
+<ul>
+<li><a href="/">Home</a></li>
+<li><a href="trials.cgi">List of Trials</a></li>
+</ul>
+{% endblock %}
 {% block body %}
-<p>{{ trial.desc }}</p>
+{% if trial.quote is defined %}
+<blockquote>{{ trial.quote[0]|replace("\n","<br/>") }}
+<div class="author">- {{ trial.quote[1] }} </div>
+</blockquote>
+{% endif %}
+<p>{{ trial.desc|replace("\n","<br/>") }}</p>
     
 <ul>
 {% if trial.options is defined and trial.options['map url'] %}
@@ -12,15 +22,19 @@
    <li>Society: {{ SOCIETY[trial.society] }} </li>
    {% if trial.options is defined %}
       {% for k in trial.options %}
-         <li>{{ k }}: {{ trial.options[k] }}</li>
+         <li>{{ k }}: {{ OPTMAP[trial.options[k]] }}</li>
       {% endfor %}
    {% endif %}
 {% endif %}
 </ul>
 
-<table><tr><th>Player</th><th>Team</th><th>AI</th><th>Class</th></tr>
+{% if players %}
+<table><tr><th>Player</th><th>Class</th><th>Controller /<br/> Difficulty</th><th>Team</th></tr>
 {% for p in players %}
-<tr><td>{{ p[0] }}</td><td>{{ p[3] }}</td><td>{{ AI[p[2]] }}</td><td>{{ CLASS[p[1]] }}</td></tr>
+<tr><td style="text-align: center">
+<div class="colorblock" style="outline-color: rgb{{ COLORS[p[0]-1] }}; background-color: rgb{{ COLORS[p[0]-1] }};" /></td>
+<td>{{ CLASS[p[1]] }}</td><td>{{ AI[p[2]] }}</td><td style="text-align: center">{{ p[3] }}</td></tr>
 {% endfor %}
 </table> 
+{% endif %}
 {% endblock %}
