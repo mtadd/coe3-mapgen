@@ -202,7 +202,7 @@ Defeat five allied Butler-level AI on a large map.''',
 'desc':'''In order to get reelected, you'll have to be alive.
 The scenario can be downloaded from this post.''',
 'classes': [CLASS.Senator, CLASS.Necromancer],
-'levels': [0, AI.Knight],
+'levels': [0, AI.Butler],
 'options':{'map url': 'http://ubuntuone.com/3w4a250e89binJ1tqeMfws'},
 'order': 22
 }, {
