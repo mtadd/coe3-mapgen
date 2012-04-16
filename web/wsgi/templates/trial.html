@@ -37,4 +37,8 @@
 {% endfor %}
 </table> 
 {% endif %}
+
+{% if trial['descurl'] is defined %}
+<p>{{ trial['descurl']|e|replace("\n","<br/>") }}</p>
+{% endif %}
 {% endblock %}

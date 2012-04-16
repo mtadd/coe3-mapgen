@@ -7,6 +7,10 @@ from mapgen import format, CLASS, AI, SOCIETY, MAPSIZE, MAP_DIMS
 
 form = cgi.FieldStorage()
 
+def web_get(url):
+   import urllib
+   return urllib.urlopen(url).read()
+
 COLORS = [ (22,90,18), (90,27,18), (18,40,90), (90,88,18), 
            (18,77,90), (90,18,86), (90,63,18), (49,18,90) ]
 
@@ -24,6 +28,9 @@ try:
    trial = copy.deepcopy(trials[num-1])
    players = pick_players(trial['classes'],trial['levels'],
                    trial.get('teams',None),trial.get('sets',None))
+   if trial.has_key('desc url'):
+      trial['descurl'] = web_get(trial['desc url'])
+
    render_template('trial.html', trial=trial, players=players,
          COLORS=COLORS, AI=AI, CLASS=CLASS, SOCIETY=SOCIETY, MAPSIZE=MAPSIZE,
          OPTMAP = {True: 'On', False: 'Off'})
