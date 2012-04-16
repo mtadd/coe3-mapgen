@@ -204,7 +204,7 @@ The scenario can be downloaded from this post.''',
 'classes': [CLASS.Senator, CLASS.Necromancer],
 'levels': [0, AI.Butler],
 'options':{'map url': 'http://ubuntuone.com/3w4a250e89binJ1tqeMfws'},
-'order': 22
+'order': 23
 }, {
 'title':'Seven Levels of Hell',
 'desc':'''Defeat seven random AI enemies (no enemy demonologist) ranging in levels from Jester to Duke''',
@@ -242,7 +242,16 @@ And lie full low, graved in the hollow ground."''',
 'levels': [0, AI.Emperor],
 'map_size': MAPSIZE.Small,
 'society': SOCIETY.Empire,
-'order': 21
+'order': 22
+}, {
+'title':'Homelands',
+'desc':'''You've decided it's time to redraw the borders (scenario by hunter).
+Please read the introduction to this scenario, written by its author, which you can access by clicking here. This scenario can be downloaded by clicking here (note that it will be easier to right-click the link and save the file).''',
+'desc url':'http://dl.dropbox.com/u/2108541/Homelands%20Readme.txt',
+'classes':[CLASS.Baron, CLASS.Witch, CLASS.Burgmeister, CLASS.Warlock, CLASS.HighCultist, CLASS.PriestKing, CLASS.Barbarian, CLASS.DwarfQueen],
+'levels': [0] + 2*[AI.Butler]+5*[AI.Knight],
+'options':{'map url': 'http://dl.dropbox.com/u/2108541/Homelands8.coem'},
+'order': 20 
 }, {
 'title':'An Absolute Bash',
 'desc':""" Roam the countryside wreaking havoc. But that will make you a lot of enemies...
@@ -255,7 +264,7 @@ Defeat 5 allied classes on a large map with the society set to agricultural.""",
 'map_size': MAPSIZE.Small,
 'society': SOCIETY.Agricultural,
 'options': {'Common cause': False, 'Cluster start': False},
-'order': 20
+'order': 21
 } , {
 'title':'One Against the World',
 'desc':'''Ever feel like the whole world is out to get you?
