@@ -196,6 +196,7 @@ Defeat five allied Butler-level AI on a large map.''',
 'teams': [1] + 5*[2],
 'map_size': MAPSIZE.Large,
 'society': SOCIETY.Agricultural,
+'options': {'Cluster start': False, 'Common cause': False},
 'order': 16
 }, {
 'title':'Political Tribulations',
